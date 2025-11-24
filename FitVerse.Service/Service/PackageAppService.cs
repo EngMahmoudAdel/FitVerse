@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FitVerse.Core.IUnitOfWorkServices;
 using FitVerse.Core.UnitOfWork;
 using FitVerse.Core.ViewModels.Package;

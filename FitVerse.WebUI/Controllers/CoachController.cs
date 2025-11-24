@@ -149,8 +149,23 @@ namespace FitVerse.Web.Controllers
         [HttpGet]
         public IActionResult GetMyClients()
         {
-            var clients = unitOFWorkService.clientOnCoachesService.GetAllClients();
-            return Json(new { success = true, clients });
+            try
+            {
+                var coachId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                
+                if (string.IsNullOrEmpty(coachId))
+                {
+                    return Json(new { success = false, message = "Coach not authenticated" });
+                }
+                
+                var clients = unitOFWorkService.clientOnCoachesService.GetClientsByCoachId(coachId);
+                return Json(new { success = true, clients });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting coach clients");
+                return Json(new { success = false, message = "Error loading clients" });
+            }
         }
         [HttpGet]
         public IActionResult GetPackagesByCoachId(string coachId)

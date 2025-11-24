@@ -1,4 +1,4 @@
-﻿using FitVerse.Core.IService;
+using FitVerse.Core.IService;
 using FitVerse.Core.UnitOfWork;
 using FitVerse.Core.ViewModels.Specialist;
 using FitVerse.Core.ViewModels.Specialty;
@@ -49,10 +49,15 @@ namespace FitVerse.Service.Service
         {
             var specialty = _unitOfWork.Specialties.GetById(id);
             if (specialty == null) return (false, "Specialty Not Found");
+            
+            // Delete image from wwwroot before deleting the entity
+            if (!string.IsNullOrEmpty(specialty.Image))
+            {
+                _imageHandleService.DeleteImage(specialty.Image);
+            }
+            
             _unitOfWork.Specialties.Delete(specialty);
             return _unitOfWork.Complete() > 0 ? (true, "Specialty deleted successfully") : (false, "Something went wrong!");
-
-
         }
         
         public List<SpecialtyVM> GetAllSpecialties()
@@ -109,6 +114,12 @@ namespace FitVerse.Service.Service
 
             if (model.Image != null)
             {
+                // Delete old image before saving new one
+                if (!string.IsNullOrEmpty(specialty.Image))
+                {
+                    _imageHandleService.DeleteImage(specialty.Image);
+                }
+                
                 var imagePath = _imageHandleService.SaveImage(model.Image);
                 specialty.Image = imagePath;
             }

@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Linq;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
+using FitVerse.Core.Models;
 
 namespace FitVerse.Web.Controllers
 {
@@ -15,11 +17,15 @@ namespace FitVerse.Web.Controllers
     {
         private readonly IUnitOFWorkService _unitOfWorkService;
         private readonly ILogger<DietPlanController> _logger;
+        private readonly FitVerse.Web.Helpers.NotificationHelper _notificationHelper;
+        private readonly UserManager<ApplicationUser> _userManager;
         
-        public DietPlanController(IUnitOFWorkService unitOfWorkService, ILogger<DietPlanController> logger)
+        public DietPlanController(IUnitOFWorkService unitOfWorkService, ILogger<DietPlanController> logger, FitVerse.Web.Helpers.NotificationHelper notificationHelper, UserManager<ApplicationUser> userManager)
         {
             _unitOfWorkService = unitOfWorkService;
             _logger = logger;
+            _notificationHelper = notificationHelper;
+            _userManager = userManager;
         }
         public IActionResult Index()
         {
@@ -142,7 +148,7 @@ namespace FitVerse.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult AssignPlan([FromBody] AssignDietPlanRequest request)
+        public async Task<IActionResult> AssignPlan([FromBody] AssignDietPlanRequest request)
         {
             try
             {
@@ -186,6 +192,20 @@ namespace FitVerse.Web.Controllers
                 _unitOfWorkService.DietPlanRepository.complete(); // Commit the changes
 
                 _logger.LogInformation($"Diet plan {request.PlanId} assigned to client {request.ClientId} by coach {currentCoachId}");
+                
+                // Send notification to client
+                try
+                {
+                    await _notificationHelper.NotifyPlanAssignedAsync(
+                        request.ClientId,
+                        "Diet",
+                        request.PlanId
+                    );
+                }
+                catch (Exception notifEx)
+                {
+                    _logger.LogError(notifEx, $"Error sending diet plan assignment notification to client {request.ClientId}");
+                }
                 
                 return Json(new { success = true, message = "Diet plan assigned successfully!" });
             }

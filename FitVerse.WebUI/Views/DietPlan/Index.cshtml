@@ -409,6 +409,30 @@
                                 <input type="number" id="fats" class="form-control-custom" placeholder="60">
                             </div>
                         </div>
+
+                        <!-- Enhanced Description Section -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <div class="description-section-wrapper">
+                                    <label class="form-label-custom fw-semibold mb-2" style="font-size: 15px;">
+                                        <i class="bi bi-file-text-fill text-primary me-2"></i>Diet Plan Description & Notes
+                                    </label>
+                                    <textarea 
+                                        id="notes" 
+                                        class="form-control-custom description-textarea" 
+                                        rows="6" 
+                                        placeholder="Enter comprehensive diet plan details:&#10;• Meal timing and frequency&#10;• Food recommendations and portions&#10;• Special dietary instructions&#10;• Supplementation guidelines&#10;• Important notes or warnings"
+                                        style="resize: vertical; min-height: 150px; font-size: 14px; line-height: 1.6; padding: 15px;">
+                                    </textarea>
+                                    <div class="form-text mt-2" style="display: flex; align-items: start; gap: 8px;">
+                                        <i class="bi bi-lightbulb-fill text-warning" style="font-size: 16px; margin-top: 2px;"></i>
+                                        <small class="text-muted" style="line-height: 1.5;">
+                                            Provide detailed information about this diet plan including meal structure, recommended foods, timing guidelines, and any special instructions. The more detailed, the better for client understanding.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer border-0">
@@ -503,6 +527,30 @@
                                 <input type="number" id="editFats" class="form-control-custom">
                             </div>
                         </div>
+
+                        <!-- Enhanced Description Section -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <div class="description-section-wrapper">
+                                    <label class="form-label-custom fw-semibold mb-2" style="font-size: 15px;">
+                                        <i class="bi bi-file-text-fill text-primary me-2"></i>Diet Plan Description & Notes
+                                    </label>
+                                    <textarea 
+                                        id="editNotes" 
+                                        class="form-control-custom description-textarea" 
+                                        rows="6" 
+                                        placeholder="Enter comprehensive diet plan details:&#10;• Meal timing and frequency&#10;• Food recommendations and portions&#10;• Special dietary instructions&#10;• Supplementation guidelines&#10;• Important notes or warnings"
+                                        style="resize: vertical; min-height: 150px; font-size: 14px; line-height: 1.6; padding: 15px;">
+                                    </textarea>
+                                    <div class="form-text mt-2" style="display: flex; align-items: start; gap: 8px;">
+                                        <i class="bi bi-lightbulb-fill text-warning" style="font-size: 16px; margin-top: 2px;"></i>
+                                        <small class="text-muted" style="line-height: 1.5;">
+                                            Provide detailed information about this diet plan including meal structure, recommended foods, timing guidelines, and any special instructions. The more detailed, the better for client understanding.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer border-0">
@@ -583,9 +631,22 @@
     </div>
 
 </div>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-<script src="/ViewJs/DietPlan.js"></script>
+
+@section Scripts {
+    <script src="/ViewJs/DietPlan.js"></script>
+    <script>
+        // Reinitialize dropdowns after page-specific content loads
+        $(document).ready(function() {
+            // Wait for DietPlan.js to finish loading content
+            setTimeout(function() {
+                if (typeof initializeDropdowns === 'function') {
+                    initializeDropdowns();
+                    console.log('[DietPlan] Dropdowns reinitialized after content load');
+                }
+            }, 1000);
+        });
+    </script>
+}
 
 <style>
     /* Diet Plan Notes Cards Styling */
@@ -635,5 +696,62 @@
 
     .diet-notes-section::-webkit-scrollbar-thumb:hover {
         background: #059669;
+    }
+
+    /* Enhanced Description Section Styling - Full Width */
+    .description-section-wrapper {
+        background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+        border: 2px solid #e0e7ff;
+        border-radius: 16px;
+        padding: 24px;
+        transition: all 0.3s ease;
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+    }
+
+    .description-section-wrapper:hover {
+        border-color: #818cf8;
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.12);
+        transform: translateY(-2px);
+    }
+
+    .description-section-wrapper:focus-within {
+        border-color: #6366f1;
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+        background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+    }
+
+    .description-textarea {
+        width: 100% !important;
+        border: 2px solid #e0e7ff !important;
+        border-radius: 10px !important;
+        transition: all 0.3s ease;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #fafbff;
+        box-sizing: border-box;
+        display: block;
+    }
+
+    .description-textarea:focus {
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12) !important;
+        outline: none;
+        background: white;
+    }
+
+    .description-textarea::placeholder {
+        color: #94a3b8;
+        font-style: normal;
+        line-height: 1.8;
+    }
+
+    /* Ensure modal body has proper width */
+    .modal-body {
+        overflow-x: hidden;
+    }
+
+    .modal-body .description-section-wrapper {
+        max-width: 100%;
     }
 </style>

@@ -1,4 +1,4 @@
-﻿using FitVerse.Core.IService;
+using FitVerse.Core.IService;
 using FitVerse.Core.UnitOfWork;
 using FitVerse.Data.Models;
 using System;
@@ -39,6 +39,11 @@ namespace FitVerse.Core.Services
 
             _unitOfWork.DailyLogsRepository.Update(log);
             _unitOfWork.Complete();
+        }
+
+        public DailyLog GetById(int id)
+        {
+            return _unitOfWork.DailyLogsRepository.GetById(id);
         }
 
         // الميثود الناقصة: آخر سجل للعميل

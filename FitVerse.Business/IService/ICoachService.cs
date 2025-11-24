@@ -1,9 +1,10 @@
-﻿using FitVerse.Core.UnitOfWork;
+using FitVerse.Core.UnitOfWork;
 using FitVerse.Core.ViewModels.Client;
 using FitVerse.Core.ViewModels.Coach;
 using FitVerse.Core.ViewModels.Package;
 using FitVerse.Data.Models;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace FitVerse.Core.IService
 {
@@ -27,9 +28,7 @@ namespace FitVerse.Core.IService
         public List<Exercise> GetTodayExercisesByClient(string coachId);
         public List<ClientDashVM> GetClientsByCoachId(string coachId);
         public Coach GetCoachByClientId(string clientId);
-
-
-
+        Task<bool> UpdateCoachProfessionalInfo(string userName, int? experienceYears, decimal? salary, string about, string certificates, string specialties);
 
     }
 }

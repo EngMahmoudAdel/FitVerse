@@ -1,4 +1,4 @@
-﻿using FitVerse.Core.IService;
+using FitVerse.Core.IService;
 using FitVerse.Core.UnitOfWork;
 using FitVerse.Core.ViewModels.Meuscle;
 using FitVerse.Data.Models;

@@ -54,7 +54,12 @@ $(document).ready(function () {
             },
             error: function () {
                 $('#exerciseCheckboxes').html('<div class="text-danger text-center p-3">Failed to load exercises</div>');
-                swal("Error", "Failed to load exercises. Please try again.", "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Loading Failed',
+                    text: 'Failed to load exercises. Please try again.',
+                    confirmButtonColor: '#ef4444'
+                });
             }
         });
     }
@@ -87,7 +92,12 @@ $(document).ready(function () {
             error: function () {
                 $('#clientSelector').html('<option value="">Failed to load clients</option>');
                 $('#clientSelectorLoading').hide();
-                swal("Error", "Failed to load clients. Please try again.", "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Loading Failed',
+                    text: 'Failed to load clients. Please try again.',
+                    confirmButtonColor: '#ef4444'
+                });
             }
         });
     }
@@ -152,7 +162,12 @@ $(document).ready(function () {
         }
 
         if (!isValid) {
-            swal("Validation Error", errorMessages.join('\n'), "warning");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Validation Error',
+                html: errorMessages.join('<br>'),
+                confirmButtonColor: '#f59e0b'
+            });
             return;
         }
 
@@ -167,9 +182,12 @@ $(document).ready(function () {
             contentType: 'application/json',
             data: JSON.stringify(planData),
             success: function (res) {
-                swal({
-                    text: res.message || "Plan created successfully!",
-                    icon: "success",
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Plan Created!',
+                    text: res.message || 'Workout plan created successfully!',
+                    confirmButtonColor: '#10b981',
+                    timer: 2500
                 }).then(() => {
                     // Reset form
                     $('#createPlanForm')[0].reset();
@@ -188,7 +206,12 @@ $(document).ready(function () {
                     let errData = JSON.parse(xhr.responseText);
                     if (errData?.message) errMsg = errData.message;
                 } catch { }
-                swal("Save Failed", errMsg, "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Save Failed',
+                    text: errMsg,
+                    confirmButtonColor: '#ef4444'
+                });
             },
             complete: function() {
                 // Restore button state
@@ -477,7 +500,12 @@ function editPlan(id) {
                 let errData = JSON.parse(xhr.responseText);
                 if (errData?.message) errMsg = errData.message;
             } catch { }
-            swal("Error", errMsg, "error");
+            Swal.fire({
+                icon: 'error',
+                title: 'Loading Failed',
+                text: errMsg,
+                confirmButtonColor: '#ef4444'
+            });
             $('#editPlanModal').modal('hide');
         }
     });
@@ -514,7 +542,12 @@ function assignPlan(id) {
                 let errData = JSON.parse(xhr.responseText);
                 if (errData?.message) errMsg = errData.message;
             } catch { }
-            swal("Error", errMsg, "error");
+            Swal.fire({
+                icon: 'error',
+                title: 'Loading Failed',
+                text: errMsg,
+                confirmButtonColor: '#ef4444'
+            });
             $('#assignPlanModal').modal('hide');
         }
     });
@@ -676,7 +709,12 @@ $(document).ready(function() {
         }
         if (selectedExercises.length === 0) {
             isValid = false;
-            swal("Validation Error", "Please select at least one exercise.", "warning");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Validation Error',
+                text: 'Please select at least one exercise.',
+                confirmButtonColor: '#f59e0b'
+            });
             return;
         }
 
@@ -693,9 +731,12 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify(planData),
             success: function (res) {
-                swal({
-                    text: res.message || "Plan updated successfully!",
-                    icon: "success",
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Plan Updated!',
+                    text: res.message || 'Workout plan updated successfully!',
+                    confirmButtonColor: '#10b981',
+                    timer: 2500
                 }).then(() => {
                     $('#editPlanModal').modal('hide');
                     loadPlans();
@@ -707,7 +748,12 @@ $(document).ready(function() {
                     let errData = JSON.parse(xhr.responseText);
                     if (errData?.message) errMsg = errData.message;
                 } catch { }
-                swal("Update Failed", errMsg, "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Update Failed',
+                    text: errMsg,
+                    confirmButtonColor: '#ef4444'
+                });
             },
             complete: function() {
                 $updateBtn.prop('disabled', false).html(originalText);
@@ -721,7 +767,12 @@ $(document).ready(function() {
         const clientId = $('#assignClientSelector').val();
 
         if (!clientId) {
-            swal("Validation Error", "Please select a client to assign this plan to.", "warning");
+            Swal.fire({
+                icon: 'warning',
+                title: 'No Client Selected',
+                text: 'Please select a client to assign this plan to.',
+                confirmButtonColor: '#f59e0b'
+            });
             return;
         }
 
@@ -736,9 +787,12 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify({ PlanId: planId, ClientId: clientId }),
             success: function (res) {
-                swal({
-                    text: res.message || "Plan assigned successfully!",
-                    icon: "success",
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Plan Assigned!',
+                    text: res.message || 'Workout plan assigned successfully!',
+                    confirmButtonColor: '#10b981',
+                    timer: 2500
                 }).then(() => {
                     $('#assignPlanModal').modal('hide');
                     loadPlans();
@@ -750,7 +804,12 @@ $(document).ready(function() {
                     let errData = JSON.parse(xhr.responseText);
                     if (errData?.message) errMsg = errData.message;
                 } catch { }
-                swal("Assignment Failed", errMsg, "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Assignment Failed',
+                    text: errMsg,
+                    confirmButtonColor: '#ef4444'
+                });
             },
             complete: function() {
                 $assignBtn.prop('disabled', false).html(originalText);
@@ -760,17 +819,67 @@ $(document).ready(function() {
 });
 
 function deletePlan(id) {
-    swal({
-        title: "Are you sure?",
-        text: "This workout plan will be permanently deleted!",
-        icon: "warning",
-        buttons: true,
-        dangerMode: true,
-    }).then((willDelete) => {
-        if (willDelete) {
-            // Implementation can be added later
-            console.log('Delete plan:', id);
-            swal("Deleted!", "The workout plan has been deleted.", "success");
+    Swal.fire({
+        title: 'Delete Workout Plan?',
+        text: "This action cannot be undone. The workout plan will be permanently removed.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<i class="bi bi-trash me-2"></i>Yes, Delete It',
+        cancelButtonText: '<i class="bi bi-x-circle me-2"></i>Cancel',
+        reverseButtons: true,
+        focusCancel: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading
+            Swal.fire({
+                title: 'Deleting...',
+                text: 'Please wait while we remove the workout plan',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: `/ExercisePlan/DeleteConfirmed/${id}`,
+                method: 'POST',
+                success: function (res) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted Successfully!',
+                        text: res.message || 'Workout plan has been removed.',
+                        confirmButtonColor: '#10b981',
+                        timer: 2000,
+                        showConfirmButton: true
+                    });
+                    loadPlans();
+                    
+                    // Update statistics
+                    $.ajax({
+                        url: '/ExercisePlan/GetAllPlans',
+                        type: 'GET',
+                        success: function(plans) {
+                            updateOverviewStats(plans);
+                        }
+                    });
+                },
+                error: function (xhr) {
+                    let errMsg = 'Unable to delete the workout plan. Please try again.';
+                    try {
+                        let errData = JSON.parse(xhr.responseText);
+                        if (errData?.message) errMsg = errData.message;
+                    } catch { }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Deletion Failed',
+                        text: errMsg,
+                        confirmButtonColor: '#ef4444'
+                    });
+                }
+            });
         }
     });
 }

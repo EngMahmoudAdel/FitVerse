@@ -1,4 +1,4 @@
-﻿using FitVerse.Core.IService;
+using FitVerse.Core.IService;
 using FitVerse.Core.IUnitOfWorkServices;
 using FitVerse.Core.ViewModels.Client;
 using FitVerse.Core.ViewModels.Package;
@@ -267,6 +267,34 @@ namespace FitVerse.Web.Controllers
                 Message = $"Payment processed successfully via {paymentMethod}",
                 ProcessedAt = DateTime.Now
             };
+        }
+
+        [HttpGet]
+        public IActionResult GetClientUserId(string id)
+        {
+            try
+            {
+                // Get client by string Id using GetAll and FirstOrDefault
+                var client = unitOFWorkService.ClientRepository.GetAll()
+                    .FirstOrDefault(c => c.Id == id);
+                
+                if (client == null)
+                {
+                    return Json(new { success = false, message = "Client not found" });
+                }
+                
+                if (string.IsNullOrEmpty(client.UserId))
+                {
+                    return Json(new { success = false, message = "Client has no associated user" });
+                }
+                
+                return Json(new { success = true, userId = client.UserId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting UserId for client {id}");
+                return Json(new { success = false, message = "Error retrieving client information" });
+            }
         }
 
         // Mock Payment Result Class

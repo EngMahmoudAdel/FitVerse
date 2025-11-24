@@ -31,10 +31,12 @@ namespace FitVerse.Service.Service
         public async Task<IEnumerable<Chat>> GetUserChatsAsync(string userId)
         {
             return await _unitOfWork.Chats.GetQueryable()
-                .Where(c => c.ClientId == userId || c.CoachId == userId)
+                .Where(c => c.Client.UserId == userId || c.Coach.UserId == userId)
                 .Include(c => c.Messages)
                 .Include(c => c.Client)
+                    .ThenInclude(cl => cl.User)
                 .Include(c => c.Coach)
+                    .ThenInclude(co => co.User)
                 .OrderByDescending(c => c.Messages.Any() ? c.Messages.Max(m => m.SentAt) : DateTime.MinValue)
                 .ToListAsync();
         }

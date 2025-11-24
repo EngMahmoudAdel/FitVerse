@@ -27,8 +27,7 @@ namespace FitVerse.Core.IService
 ;
         public Task<(bool Success, string Message, ApplicationUser user)> GetUserById(string id);
         public GetAllUsersViewModel MapToGetAllUsersViewModel(ApplicationUser user, string role);
-        public Task<string> SaveImageInWWWRoot(IFormFile image);
-        public Task<string> SaveOrUpdateImageInWWWRoot(IFormFile image, string UserName);
+        public Task UpdateUserImagePathAsync(string userName, string imageFileName);
         public  Task<(bool, string)> UpdatePersonalInfoAsync(GetAllUsersViewModel user);
 
         public Task<(bool Success, string Message)> ChangeUserRoleAsync(ChangeUserRoleViewModel userWithRole);

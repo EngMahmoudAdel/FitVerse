@@ -15,6 +15,13 @@ namespace FitVerse.Web.Controllers
     {
         public string OtherUserId { get; set; }
     }
+
+    public class SendMessageRequest
+    {
+        public int ChatId { get; set; }
+        public string Content { get; set; }
+    }
+
     [Authorize]
     public class ChatController : Controller
     {
@@ -24,8 +31,9 @@ namespace FitVerse.Web.Controllers
         private readonly ICoachService _coachService;
         private readonly IClientService _clientService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly FitVerse.Web.Helpers.NotificationHelper _notificationHelper;
 
-        public ChatController(IChatService chatService, IMessageService messageService, UserManager<ApplicationUser> userManager, ICoachService coachService, IClientService clientService, IUnitOfWork unitOfWork)
+        public ChatController(IChatService chatService, IMessageService messageService, UserManager<ApplicationUser> userManager, ICoachService coachService, IClientService clientService, IUnitOfWork unitOfWork, FitVerse.Web.Helpers.NotificationHelper notificationHelper)
         {
             _chatService = chatService;
             _messageService = messageService;
@@ -33,6 +41,7 @@ namespace FitVerse.Web.Controllers
             _coachService = coachService;
             _clientService = clientService;
             _unitOfWork = unitOfWork;
+            _notificationHelper = notificationHelper;
         }
 
         public async Task<IActionResult> ClientChat()
@@ -90,20 +99,42 @@ namespace FitVerse.Web.Controllers
                     return Json(new { success = false, message = $"User not found with ID: {request.OtherUserId}" });
                 }
 
-                // Determine who is coach and who is client
-                string clientId, coachId;
+                // Determine who is coach and who is client, and get their entity IDs
+                string clientEntityId, coachEntityId;
                 if (await _userManager.IsInRoleAsync(currentUser, RoleConstants.Coach))
                 {
-                    coachId = currentUserId;
-                    clientId = request.OtherUserId;
+                    // Current user is coach, other user is client
+                    var coachEntity = await _unitOfWork.Coaches.GetQueryable()
+                        .FirstOrDefaultAsync(c => c.UserId == currentUserId);
+                    var clientEntity = await _unitOfWork.Clients.GetQueryable()
+                        .FirstOrDefaultAsync(c => c.UserId == request.OtherUserId);
+
+                    if (coachEntity == null || clientEntity == null)
+                    {
+                        return Json(new { success = false, message = "Coach or Client entity not found" });
+                    }
+
+                    coachEntityId = coachEntity.Id;
+                    clientEntityId = clientEntity.Id;
                 }
                 else
                 {
-                    clientId = currentUserId;
-                    coachId = request.OtherUserId;
+                    // Current user is client, other user is coach
+                    var clientEntity = await _unitOfWork.Clients.GetQueryable()
+                        .FirstOrDefaultAsync(c => c.UserId == currentUserId);
+                    var coachEntity = await _unitOfWork.Coaches.GetQueryable()
+                        .FirstOrDefaultAsync(c => c.UserId == request.OtherUserId);
+
+                    if (coachEntity == null || clientEntity == null)
+                    {
+                        return Json(new { success = false, message = "Coach or Client entity not found" });
+                    }
+
+                    clientEntityId = clientEntity.Id;
+                    coachEntityId = coachEntity.Id;
                 }
 
-                var chat = await _chatService.CreateChatAsync(clientId, coachId);
+                var chat = await _chatService.CreateChatAsync(clientEntityId, coachEntityId);
                 
                 return Json(new { 
                     success = true, 
@@ -138,12 +169,106 @@ namespace FitVerse.Web.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
+        {
+            try
+            {
+                var senderId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                
+                if (request == null || request.ChatId <= 0 || string.IsNullOrWhiteSpace(request.Content))
+                {
+                    return Json(new { success = false, message = "Invalid message data" });
+                }
+
+                // Get the chat to determine the receiver
+                var chat = await _unitOfWork.Chats.GetQueryable()
+                    .Where(c => c.Id == request.ChatId)
+                    .FirstOrDefaultAsync();
+
+                if (chat == null)
+                {
+                    return Json(new { success = false, message = "Chat not found" });
+                }
+
+                // Determine receiver ID
+                var receiverId = chat.ClientId == senderId ? chat.CoachId : chat.ClientId;
+
+                var message = new Message
+                {
+                    ChatId = request.ChatId,
+                    SenderId = senderId,
+                    ReciverId = receiverId,
+                    Content = request.Content,
+                    SentAt = DateTime.Now,
+                    IsRead = false
+                };
+
+                await _messageService.CreateAsync(message);
+
+                // Get sender info for response
+                var sender = await _userManager.FindByIdAsync(senderId);
+
+                // Send notification to receiver
+                try
+                {
+                    var senderName = sender?.FullName ?? sender?.UserName ?? "Someone";
+                    await _notificationHelper.NotifyMessageReceivedAsync(
+                        receiverId,
+                        senderName,
+                        message.Id
+                    );
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ChatController] Error sending message notification: {ex.Message}");
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    message = new
+                    {
+                        Id = message.Id,
+                        Content = message.Content,
+                        SentAt = message.SentAt.ToString("HH:mm"),
+                        SenderId = message.SenderId,
+                        SenderName = sender?.UserName ?? "Unknown",
+                        IsCurrentUser = true,
+                        IsRead = message.IsRead
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
         public async Task<IActionResult> MarkAsRead(int chatId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            // Get unread count before marking as read
+            var chat = await _unitOfWork.Chats.GetQueryable()
+                .Include(c => c.Messages)
+                .FirstOrDefaultAsync(c => c.Id == chatId);
+            
+            if (chat == null)
+            {
+                return Json(new { success = false, message = "Chat not found" });
+            }
+            
+            var unreadCount = chat.Messages?.Count(m => m.ReciverId == userId && !m.IsRead) ?? 0;
+            
+            // Mark messages as read
             await _messageService.MarkMessagesAsReadAsync(chatId, userId);
             
-            return Json(new { success = true });
+            return Json(new { 
+                success = true, 
+                unreadCount = 0,  // After marking as read, unread count is 0
+                previousUnreadCount = unreadCount 
+            });
         }
 
         [HttpGet]
@@ -157,7 +282,7 @@ namespace FitVerse.Web.Controllers
             foreach (var chat in chats)
             {
                 ApplicationUser otherUser;
-                if (chat.ClientId == userId)
+                if (chat.Client?.UserId == userId)
                 {
                     otherUser = chat.Coach?.User;
                 }
@@ -168,13 +293,32 @@ namespace FitVerse.Web.Controllers
                 
                 var latestMessage = await _messageService.GetLatestMessageInChatAsync(chat.Id);
                 var unreadCount = chat.Messages?.Count(m => m.ReciverId == userId && !m.IsRead) ?? 0;
-                
+
+                string otherUserAvatar;
+                if (!string.IsNullOrEmpty(otherUser?.ImagePath))
+                {
+                    var imgPath = otherUser.ImagePath;
+                    if (imgPath.StartsWith("/"))
+                    {
+                        otherUserAvatar = imgPath;
+                    }
+                    else
+                    {
+                        otherUserAvatar = $"/profile-image/{imgPath}";
+                    }
+                }
+                else
+                {
+                    var nameForAvatar = otherUser?.FullName ?? otherUser?.UserName ?? "User";
+                    otherUserAvatar = $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(nameForAvatar)}&background=10b981&color=fff";
+                }
+
                 chatData.Add(new
                 {
                     Id = chat.Id,
                     OtherUserId = otherUser?.Id,
                     OtherUserName = otherUser?.FullName ?? "Unknown",
-                    OtherUserAvatar = $"https://ui-avatars.com/api/?name={otherUser?.UserName}&background=10b981&color=fff",
+                    OtherUserAvatar = otherUserAvatar,
                     LatestMessage = latestMessage?.Content ?? "No messages yet",
                     LatestMessageTime = latestMessage?.SentAt.ToString("HH:mm") ?? "",
                     UnreadCount = unreadCount,

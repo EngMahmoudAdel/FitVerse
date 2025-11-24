@@ -1,4 +1,4 @@
-﻿using FitVerse.Core.IService;
+using FitVerse.Core.IService;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -30,6 +30,35 @@ namespace FitVerse.Data.Service
             }
 
             return $"/Images/{fileName}";
+        }
+
+        public bool DeleteImage(string? imagePath)
+        {
+            if (string.IsNullOrEmpty(imagePath))
+                return false;
+
+            try
+            {
+                // Remove leading slash if present
+                string cleanPath = imagePath.TrimStart('/');
+                
+                // Build full path to the image file
+                string fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", cleanPath);
+
+                // Check if file exists and delete it
+                if (File.Exists(fullPath))
+                {
+                    File.Delete(fullPath);
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception)
+            {
+                // Log the exception if you have a logging service
+                return false;
+            }
         }
     }
 }

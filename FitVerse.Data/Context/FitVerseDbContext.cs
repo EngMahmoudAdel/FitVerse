@@ -1,4 +1,4 @@
-﻿using FitVerse.Core.Models;
+using FitVerse.Core.Models;
 using FitVerse.Data.Configurations;
 using FitVerse.Data.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;

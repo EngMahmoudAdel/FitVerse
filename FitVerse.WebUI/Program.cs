@@ -89,13 +89,16 @@ namespace FitVerse.WebUI
             });
 
 
-            // Add SignalR
+            // Add SignalR with custom UserIdProvider for targeted notifications
             builder.Services.AddSignalR()
              .AddJsonProtocol(options =>
              {
                  options.PayloadSerializerOptions.PropertyNamingPolicy = null;
                  options.PayloadSerializerOptions.PropertyNameCaseInsensitive = true;
              });
+
+            // Register custom UserIdProvider for SignalR (CRITICAL for notifications)
+            builder.Services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, FitVerse.Web.Helpers.CustomUserIdProvider>();
 
             
             builder.Services.AddScoped<IExercisePlanDetailRepository, ExercisePlanDetailRepository>();
@@ -117,6 +120,7 @@ namespace FitVerse.WebUI
             builder.Services.AddScoped<IChatService, ChatService>();
             builder.Services.AddScoped<IMessageService, MessageService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddScoped<FitVerse.Web.Helpers.NotificationHelper>();
             builder.Services.AddScoped<ICoachService, CoachService>();
             builder.Services.AddScoped<IClientService, ClientService>();
             builder.Services.AddScoped<IImageHandleService, ImageHandleService>();

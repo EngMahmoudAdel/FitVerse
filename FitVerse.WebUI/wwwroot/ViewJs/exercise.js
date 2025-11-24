@@ -84,7 +84,12 @@ function loadMuscles() {
             }
         },
         error: function () {
-            swal("Error", "Failed to load muscles!", "error");
+            Swal.fire({
+                icon: 'error',
+                title: 'Loading Failed',
+                text: 'Failed to load muscles!',
+                confirmButtonColor: '#ef4444'
+            });
         }
     });
 }
@@ -137,7 +142,12 @@ function loadEquipments() {
             }
         },
         error: function () {
-            swal("Error", "Failed to load equipment!", "error");
+            Swal.fire({
+                icon: 'error',
+                title: 'Loading Failed',
+                text: 'Failed to load equipment!',
+                confirmButtonColor: '#ef4444'
+            });
         }
     });
 }
@@ -290,20 +300,33 @@ function addExercise() {
         data: exercise,
         success: function (response) {
             if (response.success) {
-                swal({
-                    title: "✅ Added Successfully!",
-                    icon: "success",
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Exercise Added!',
+                    text: response.message || 'Exercise added successfully!',
+                    confirmButtonColor: '#10b981',
+                    timer: 2500
                 }).then(() => {
                     $('#addExerciseModal').modal('hide');
                     $('#exerciseForm')[0].reset();
                     loadExercisesPaged(); // يعيد تحميل التمارين
                 });
             } else {
-                swal("Error", response.message, "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.message,
+                    confirmButtonColor: '#ef4444'
+                });
             }
         },
         error: function () {
-            swal("Error", "Failed to add exercise!", "error");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to add exercise!',
+                confirmButtonColor: '#ef4444'
+            });
         }
     });
 }
@@ -323,10 +346,22 @@ function getExerciseById(Id) {
                 $('#description').val(data.Description);
                 $('#saveBtn').html('<i class="fas fa-save"></i> Update Exercise');
                 $('#addExerciseModal').modal('show');
-            } else swal("Error", response.message, "error");
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.message,
+                    confirmButtonColor: '#ef4444'
+                });
+            }
         },
         error: function () {
-            swal("Error", "Failed to fetch exercise!", "error");
+            Swal.fire({
+                icon: 'error',
+                title: 'Loading Failed',
+                text: 'Failed to fetch exercise!',
+                confirmButtonColor: '#ef4444'
+            });
         }
     });
 }
@@ -348,39 +383,103 @@ function updateExercise() {
         data: exercise,
         success: function (response) {
             if (response.success) {
-                swal("Updated!", response.message, "success");
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Exercise Updated!',
+                    text: response.message || 'Exercise updated successfully!',
+                    confirmButtonColor: '#10b981',
+                    timer: 2500
+                });
+                $('#addExerciseModal').modal('hide');
                 clearForm();
                 loadExercisesPaged();
                 $('#saveBtn').html('<i class="fas fa-save"></i> Save Exercise');
-            } else swal("Error", response.message, "error");
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Update Failed',
+                    text: response.message,
+                    confirmButtonColor: '#ef4444'
+                });
+            }
         },
         error: function () {
-            swal("Error", "Failed to update exercise!", "error");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to update exercise!',
+                confirmButtonColor: '#ef4444'
+            });
         }
     });
 }
 
 
 function deleteExercise(Id) {
-    swal({
-        title: "Are you sure?",
-        text: "This exercise will be permanently deleted!",
-        icon: "warning",
-        buttons: true,
-        dangerMode: true,
-    }).then((willDelete) => {
-        if (willDelete) {
+    Swal.fire({
+        title: 'Delete Exercise?',
+        text: "This action cannot be undone. The exercise will be permanently removed.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<i class="bi bi-trash me-2"></i>Yes, Delete It',
+        cancelButtonText: '<i class="bi bi-x-circle me-2"></i>Cancel',
+        reverseButtons: true,
+        focusCancel: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading
+            Swal.fire({
+                title: 'Deleting...',
+                text: 'Please wait while we remove the exercise',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
             $.ajax({
                 url: '/Exercise/Delete?id=' + Id,
                 method: 'POST',
                 success: function (response) {
                     if (response.success) {
-                        swal("Deleted!", response.message, "success");
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted Successfully!',
+                            text: response.message || 'Exercise has been removed.',
+                            confirmButtonColor: '#10b981',
+                            timer: 2000,
+                            showConfirmButton: true
+                        });
                         loadExercisesPaged();
-                    } else swal("Error", response.message, "error");
+                        
+                        // Remove the card with animation
+                        $(`.exercise-card[data-exercise-id="${Id}"]`).fadeOut(400, function() {
+                            $(this).remove();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Deletion Failed',
+                            text: response.message || 'Unable to delete the exercise.',
+                            confirmButtonColor: '#ef4444'
+                        });
+                    }
                 },
-                error: function () {
-                    swal("Error", "Failed to delete exercise!", "error");
+                error: function (xhr) {
+                    let errMsg = 'Unable to delete the exercise. Please try again.';
+                    try {
+                        let errData = JSON.parse(xhr.responseText);
+                        if (errData?.message) errMsg = errData.message;
+                    } catch { }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Deletion Failed',
+                        text: errMsg,
+                        confirmButtonColor: '#ef4444'
+                    });
                 }
             });
         }

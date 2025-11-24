@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FitVerse.Core.IService;
 using FitVerse.Core.UnitOfWork;
 using FitVerse.Core.ViewModels.Anatomy;
@@ -80,6 +80,12 @@ namespace FitVerse.Service.Service
                 // ✅ تحديث الصورة لو تم رفع واحدة جديدة
                 if (model.ImageFile != null)
                 {
+                    // Delete old image before saving new one
+                    if (!string.IsNullOrEmpty(anatomy.Image))
+                    {
+                        imageHandleService.DeleteImage(anatomy.Image);
+                    }
+                    
                     string? imagePath = imageHandleService.SaveImage(model.ImageFile);
                     anatomy.Image = imagePath ?? anatomy.Image;
                 }
@@ -100,6 +106,12 @@ namespace FitVerse.Service.Service
             var Anatomy = unitOfWork.Anatomies.GetById(id);
             if (Anatomy == null)
                 return (false, "Not Found!");
+
+            // Delete image from wwwroot before deleting the entity
+            if (!string.IsNullOrEmpty(Anatomy.Image))
+            {
+                imageHandleService.DeleteImage(Anatomy.Image);
+            }
 
             unitOfWork.Anatomies.Delete(Anatomy);
             if (unitOfWork.Complete() > 0)

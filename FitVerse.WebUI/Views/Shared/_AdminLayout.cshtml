@@ -673,9 +673,23 @@
                     <div class="dropdown">
                         @{
                             var userName = ViewBag.UserFullName as string ?? User.Identity?.Name ?? "Admin";
-                            var userImageUrl = ViewBag.UserImagePath != null && !string.IsNullOrEmpty(ViewBag.UserImagePath.ToString()) 
-                                ? Url.Content(ViewBag.UserImagePath.ToString())
-                                : $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(userName)}&background=6366f1&color=fff";
+                            var rawImagePath = ViewBag.UserImagePath?.ToString();
+                            string userImageUrl;
+                            if (!string.IsNullOrEmpty(rawImagePath))
+                            {
+                                if (rawImagePath.StartsWith("/"))
+                                {
+                                    userImageUrl = Url.Content(rawImagePath);
+                                }
+                                else
+                                {
+                                    userImageUrl = Url.Content($"/profile-image/{rawImagePath}");
+                                }
+                            }
+                            else
+                            {
+                                userImageUrl = $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(userName)}&background=6366f1&color=fff";
+                            }
                         }
                         <a class="user-profile dropdown-toggle" href="#" role="button" id="adminUserDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             <img src="@userImageUrl" alt="@userName" class="user-avatar" />
@@ -729,41 +743,73 @@
 
     <!-- Enhanced Layout Functionality -->
     <script>
-        $(document).ready(function () {
+        // Initialize dropdowns function - can be called multiple times safely
+        // Make it global so page-specific scripts can call it
+        window.initializeDropdowns = function() {
+            console.log('[Admin Layout] Initializing dropdowns...');
+            
+            // Remove any existing dropdown instances to prevent conflicts
+            document.querySelectorAll('.dropdown-toggle').forEach(function(element) {
+                var existingDropdown = bootstrap.Dropdown.getInstance(element);
+                if (existingDropdown) {
+                    existingDropdown.dispose();
+                }
+            });
+            
             // Initialize Bootstrap dropdowns
             if (typeof bootstrap !== 'undefined') {
-                // Explicitly initialize admin user dropdown first
-                var adminDropdownEl = document.getElementById('adminUserDropdown');
-                if (adminDropdownEl) {
-                    var adminDropdown = new bootstrap.Dropdown(adminDropdownEl, {
-                        boundary: 'viewport',
-                        display: 'dynamic',
-                        popperConfig: {
-                            strategy: 'fixed'
-                        }
-                    });
-                    console.log('Admin dropdown initialized successfully');
-                    
-                    // Add manual click handler as fallback
-                    adminDropdownEl.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('Admin dropdown clicked');
-                        adminDropdown.toggle();
-                    });
-                }
-                
-                // Initialize other dropdowns
-                var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle:not(#adminUserDropdown)'));
+                // Initialize all dropdowns including admin user dropdown
+                var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
                 var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
-                    return new bootstrap.Dropdown(dropdownToggleEl, {
-                        boundary: 'viewport',
-                        display: 'dynamic'
-                    });
+                    try {
+                        return new bootstrap.Dropdown(dropdownToggleEl, {
+                            boundary: 'viewport',
+                            display: 'dynamic',
+                            autoClose: true
+                        });
+                    } catch (e) {
+                        console.error('[Admin Layout] Error initializing dropdown:', e);
+                        return null;
+                    }
                 });
+                console.log('[Admin Layout] Initialized ' + dropdownList.filter(d => d !== null).length + ' dropdowns');
             } else {
-                console.error('Bootstrap is not loaded!');
+                console.error('[Admin Layout] Bootstrap is not defined!');
             }
+        };
+
+        $(document).ready(function () {
+            console.log('[Admin Layout] Document ready - initializing...');
+            
+            // Initialize dropdowns on page load
+            window.initializeDropdowns();
+            
+            // Reinitialize dropdowns after delays (handles async content)
+            setTimeout(window.initializeDropdowns, 500);
+            setTimeout(window.initializeDropdowns, 1500);
+            setTimeout(window.initializeDropdowns, 3000); // Extra delay for very slow content
+            
+            // ✅ DELEGATED EVENT BINDING for dropdowns (works with dynamic content)
+            $(document).on('click', '.dropdown-toggle', function(e) {
+                console.log('[Admin Layout] Dropdown toggle clicked via delegation');
+                
+                // Let Bootstrap handle it first
+                var dropdown = bootstrap.Dropdown.getInstance(this);
+                if (!dropdown) {
+                    // If no instance exists, create one and toggle
+                    try {
+                        dropdown = new bootstrap.Dropdown(this, {
+                            boundary: 'viewport',
+                            display: 'dynamic',
+                            autoClose: true
+                        });
+                        dropdown.toggle();
+                        console.log('[Admin Layout] Created and toggled dropdown instance');
+                    } catch (err) {
+                        console.error('[Admin Layout] Error creating dropdown:', err);
+                    }
+                }
+            });
 
             // Sidebar toggle functionality
             $('#sidebarToggle').on('click', function (e) {
@@ -829,32 +875,7 @@
                 }
             });
 
-            // Enhanced dropdown functionality
-            $('.dropdown-toggle').on('click', function (e) {
-                const $dropdown = $(this).closest('.dropdown');
-                const $menu = $dropdown.find('.dropdown-menu');
-
-                $('.dropdown-menu').not($menu).removeClass('show');
-                $menu.toggleClass('show');
-
-                e.stopPropagation();
-            });
-
-            $(document).on('click', function (e) {
-                if (!$(e.target).closest('.dropdown').length) {
-                    $('.dropdown-menu').removeClass('show');
-                }
-            });
-
-            $('.dropdown-menu').on('click', function (e) {
-                e.stopPropagation();
-            });
-
-            $('.dropdown-item').on('click', function (e) {
-                if (!$(this).hasClass('no-close')) {
-                    $(this).closest('.dropdown-menu').removeClass('show');
-                }
-            });
+            // Let Bootstrap handle dropdown behavior via initializeDropdowns
 
             // Enhanced modal cleanup functionality
             function cleanupModal(modalId) {

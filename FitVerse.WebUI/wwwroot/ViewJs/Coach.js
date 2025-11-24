@@ -1,40 +1,6 @@
 
-$(function () {
-    $("#coachForm").submit(function (e) {
-        e.preventDefault();
-        let formData = new FormData(this);
-        // checkbox دائمًا
-        formData.set("IsActive", $('#IsActive').is(':checked') ? "true" : "false");
-        // معرفة أي زر ضغط المستخدم
-        let submitterId = e.originalEvent?.submitter?.id;
-        let url = submitterId === "UpdateCoach" ? '/Coach/UpdateCoach' : '/Coach/AddCoach';
-        $.ajax({
-            url: url,
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function (res) {
-                if (res.success) {
-                    swal(submitterId === "UpdateCoach" ? "✅ Updated" : "✅ Success", res.message, "success");
-                    $("#coachForm")[0].reset();
-                    LoadCoaches();
-
-                    // إظهار/إخفاء الأزرار
-                    if (submitterId === "UpdateCoach") {
-                        $('#UpdateCoach').hide();
-                        $('#SaveCoach').show();
-                    }
-                } else {
-                    swal("❌ Error", res.message, "error");
-                }
-            },
-            error: function () {
-                swal("⚠️ Warning", "An error occurred.", "error");
-            }
-        });
-    });
-});
+// Form submission removed - Admin can only view and delete coaches
+// Coaches are managed through their own profile pages
 
 
 
@@ -47,8 +13,6 @@ function LoadCoaches() {
         url: '/Coach/GetAllCoaches',
         method: 'GET',
         success: function (res) {
-            $('#UpdateCoach').hide();
-            $('#SaveCoach').show();
             if (res.success) {
                 let coaches = res.data;
                 let coachTableBody = $("#Data");
@@ -73,8 +37,17 @@ function LoadCoaches() {
                             ? '<span class="badge bg-success">✅ Active</span>'
                             : '<span class="badge bg-danger">❌ Inactive</span>';
 
-                        // Avatar URL
-                        let avatarUrl = coach.ImagePath || `https://ui-avatars.com/api/?name=${encodeURIComponent(coach.Name)}&background=6366f1&color=fff`;
+                        // Avatar URL (supports legacy /img/... paths and new /profile-image/{fileName})
+                        let avatarUrl;
+                        if (coach.ImagePath && coach.ImagePath.trim() !== '') {
+                            if (coach.ImagePath.startsWith('/')) {
+                                avatarUrl = coach.ImagePath;
+                            } else {
+                                avatarUrl = `/profile-image/${coach.ImagePath}`;
+                            }
+                        } else {
+                            avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(coach.Name)}&background=6366f1&color=fff`;
+                        }
 
                         let row = `
                             <tr>
@@ -87,10 +60,6 @@ function LoadCoaches() {
                                 </td>
                                 <td class="text-center">${statusBadge}</td>
                                 <td class="text-center">
-                                    <button type="button" onclick="getById('${coach.Id}')" 
-                                            class="btn btn-sm btn-outline-primary" title="Edit Coach">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
                                     <button type="button" onclick="DeleteCoach('${coach.Id}')" 
                                             class="btn btn-sm btn-outline-danger" title="Delete Coach">
                                         <i class="bi bi-trash"></i>
@@ -114,30 +83,7 @@ function LoadCoaches() {
     });
 }
 
-function getById(id) {
-    $.ajax({
-        url: '/Coach/GetCoachById?id=' + id,
-        method: 'GET',
-        success: function (response) {
-            if (response.success) {
-                let coach = response.data;
-                console.log("IsActive value:", response.data.IsActive, typeof coach.IsActive);
-                $('#coachId').val(coach.Id);
-                $('#coachName').val(coach.Name);
-                $('#coachTitle').val(coach.Title);
-                $('#coachAbout').val(coach.About);
-                $('#IsActive').prop('checked', coach.IsActive);
-                $('#UpdateCoach').show();
-                $('#SaveCoach').hide();
-            } else {
-                swal("❌ Error", response.message, "error");
-            }
-        },
-        error: function () {
-            swal("⚠️ Warning", "Could not load coach details.", "error");
-        }
-    });
-}
+// Edit function removed - Admin can only view and delete coaches
 
 function DeleteCoach(id) {
     Swal.fire({
@@ -202,12 +148,24 @@ function loadEquipments(page = 1, search = "") {
             } else {
                 res.data.forEach(item => {
                     let status = item.IsActive ? "✅ Active" : "❌ Inactive";
+
+                    let imageUrl;
+                    if (item.ImagePath && item.ImagePath.trim() !== '') {
+                        if (item.ImagePath.startsWith('/')) {
+                            imageUrl = item.ImagePath;
+                        } else {
+                            imageUrl = `/profile-image/${item.ImagePath}`;
+                        }
+                    } else {
+                        imageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.Name)}&background=6366f1&color=fff`;
+                    }
+
                     let row = `
                         <tr>
                             <td>${item.Name}</td>
                             <td>${item.Title}</td>
                             <td>${item.About}</td>
-                            <td><img src="${item.ImagePath}" alt="${item.Name}" width="80"/></td>
+                            <td><img src="${imageUrl}" alt="${item.Name}" width="80"/></td>
                             <td>${status}</td>
                             <td class="actions">
                                 <button type="button" onclick="getById('${item.Id}')" class="btn-icon" title="Edit">

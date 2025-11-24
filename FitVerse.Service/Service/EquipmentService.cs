@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FitVerse.Core.IService;
 using FitVerse.Core.UnitOfWork;
 using FitVerse.Core.viewModels;
@@ -82,6 +82,12 @@ namespace FitVerse.Service.Service
                 // ✅ تحديث الصورة لو تم رفع واحدة جديدة
                 if (model.EquipmentImageFile != null)
                 {
+                    // Delete old image before saving new one
+                    if (!string.IsNullOrEmpty(equipment.Image))
+                    {
+                        imageHandleService.DeleteImage(equipment.Image);
+                    }
+                    
                     string? imagePath = imageHandleService.SaveImage(model.EquipmentImageFile);
                     equipment.Image = imagePath ?? equipment.Image;
                 }
@@ -102,6 +108,12 @@ namespace FitVerse.Service.Service
             var equipment = unitOfWork.Equipments.GetById(id);
             if (equipment == null)
                 return (false, "Not Found!");
+
+            // Delete image from wwwroot before deleting the entity
+            if (!string.IsNullOrEmpty(equipment.Image))
+            {
+                imageHandleService.DeleteImage(equipment.Image);
+            }
 
             unitOfWork.Equipments.Delete(equipment);
             if (unitOfWork.Complete() > 0)

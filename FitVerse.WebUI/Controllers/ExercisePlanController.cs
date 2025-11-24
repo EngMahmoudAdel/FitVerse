@@ -3,6 +3,8 @@ using FitVerse.Core.IService;
 using FitVerse.Core.ViewModels.Plan;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
+using FitVerse.Core.Models;
 
 namespace FitVerse.Web.Controllers
 {
@@ -12,17 +14,23 @@ namespace FitVerse.Web.Controllers
         private readonly IExerciseService _exerciseService;
         private readonly IClientService clientService;
         private readonly IMapper _mapper;
+        private readonly FitVerse.Web.Helpers.NotificationHelper _notificationHelper;
+        private readonly UserManager<ApplicationUser> _userManager;
 
         public ExercisePlanController(
             IExercisePlanService exercisePlanService,
             IExerciseService exerciseService,
             IClientService clientService,
-            IMapper mapper)
+            IMapper mapper,
+            FitVerse.Web.Helpers.NotificationHelper notificationHelper,
+            UserManager<ApplicationUser> userManager)
         {
             _exercisePlanService = exercisePlanService;
             _exerciseService = exerciseService;
             this.clientService = clientService;
             _mapper = mapper;
+            _notificationHelper = notificationHelper;
+            _userManager = userManager;
         }
         public IActionResult Index()
         {
@@ -347,7 +355,7 @@ namespace FitVerse.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult AssignPlan([FromBody] AssignPlanRequest request)
+        public async Task<IActionResult> AssignPlan([FromBody] AssignPlanRequest request)
         {
             try
             {
@@ -385,6 +393,20 @@ namespace FitVerse.Web.Controllers
                 var success = _exercisePlanService.UpdatePlan(request.PlanId, planVM);
                 if (success)
                 {
+                    // Send notification to client
+                    try
+                    {
+                        await _notificationHelper.NotifyPlanAssignedAsync(
+                            request.ClientId,
+                            "Exercise",
+                            request.PlanId
+                        );
+                    }
+                    catch (Exception notifEx)
+                    {
+                        Console.WriteLine($"Error sending plan assignment notification: {notifEx.Message}");
+                    }
+                    
                     return Ok(new { message = "Plan assigned successfully!" });
                 }
                 else

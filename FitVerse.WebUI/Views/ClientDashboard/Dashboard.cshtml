@@ -203,10 +203,22 @@
                 </div>
             </div>
             <div class="col-md-4 text-center">
-                <img src="@(string.IsNullOrEmpty(Model.CoachImagePath) || Model.CoachImagePath == "--"
-                                      ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(Model.CoachName ?? "Coach")}&background=ffffff&color=6366f1"
-                                      : Url.Content(Model.CoachImagePath))"
-                     class="coach-avatar-large" alt="@Model.CoachName" />
+                @{
+                    string coachImageUrl;
+                    if (string.IsNullOrEmpty(Model.CoachImagePath) || Model.CoachImagePath == "--")
+                    {
+                        coachImageUrl = $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(Model.CoachName ?? "Coach")}&background=ffffff&color=6366f1";
+                    }
+                    else if (Model.CoachImagePath.StartsWith("/"))
+                    {
+                        coachImageUrl = Url.Content(Model.CoachImagePath);
+                    }
+                    else
+                    {
+                        coachImageUrl = Url.Content($"/profile-image/{Model.CoachImagePath}");
+                    }
+                }
+                <img src="@coachImageUrl" class="coach-avatar-large" alt="@Model.CoachName" />
                 <p class="mt-2 mb-0 opacity-90">@Model.CoachExperience years experience</p>
             </div>
         </div>
@@ -230,9 +242,6 @@
                             <i class="bi bi-info-circle me-2"></i>
                             <strong>Coach Notes:</strong> @Model.ExercisePlanSummary
                         </div>
-                        <a href="@Url.Action("Workouts", "Client")" class="btn btn-primary-custom w-100">
-                            <i class="bi bi-play-circle me-2"></i>Start Workout
-                        </a>
                     }
                     else
                     {
@@ -265,9 +274,6 @@
                             <i class="bi bi-check-circle me-2"></i>
                             <strong>Coach Notes:</strong> @Model.DietPlanSummary
                         </div>
-                        <a href="@Url.Action("DailyLogs", "Client")" class="btn btn-primary-custom w-100">
-                            <i class="bi bi-journal-text me-2"></i>View Diet Plan
-                        </a>
                     }
                     else
                     {
@@ -340,9 +346,23 @@ else
                     {
                         <div class="coach-card">
                             <div class="text-center">
-                                <img src="@(string.IsNullOrEmpty(coach.User?.ImagePath)
-                                                      ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(coach.User?.FullName ?? "Coach")}&background=6366f1&color=fff"
-                                                      : Url.Content(coach.User.ImagePath))"
+                                @{
+                                    string coachPreviewUrl;
+                                    var coachImagePath = coach.User?.ImagePath;
+                                    if (string.IsNullOrEmpty(coachImagePath))
+                                    {
+                                        coachPreviewUrl = $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(coach.User?.FullName ?? "Coach")}&background=6366f1&color=fff";
+                                    }
+                                    else if (coachImagePath.StartsWith("/"))
+                                    {
+                                        coachPreviewUrl = Url.Content(coachImagePath);
+                                    }
+                                    else
+                                    {
+                                        coachPreviewUrl = Url.Content($"/profile-image/{coachImagePath}");
+                                    }
+                                }
+                                <img src="@coachPreviewUrl"
                                      class="coach-avatar-small mx-auto d-block mb-3" alt="@coach.User?.FullName" />
                                 <h6 class="mb-2">@coach.User?.FullName</h6>
                                 <p class="text-muted small mb-3">@coach.ExperienceYears years experience</p>
@@ -417,9 +437,22 @@ else
                     <div class="info-icon">
                         <i class="bi bi-person"></i>
                     </div>
-                    <img src="@(string.IsNullOrEmpty(Model.ClientImagePath) || Model.ClientImagePath == "--"
-                                      ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(Model.ClientName ?? "Client")}&background=10b981&color=fff"
-                                      : Url.Content(Model.ClientImagePath))"
+                    @{
+                        string clientImageUrl;
+                        if (string.IsNullOrEmpty(Model.ClientImagePath) || Model.ClientImagePath == "--")
+                        {
+                            clientImageUrl = $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(Model.ClientName ?? "Client")}&background=10b981&color=fff";
+                        }
+                        else if (Model.ClientImagePath.StartsWith("/"))
+                        {
+                            clientImageUrl = Url.Content(Model.ClientImagePath);
+                        }
+                        else
+                        {
+                            clientImageUrl = Url.Content($"/profile-image/{Model.ClientImagePath}");
+                        }
+                    }
+                    <img src="@clientImageUrl"
                          class="coach-avatar-small mx-auto d-block mb-3" alt="@Model.ClientName" />
                     <h6 class="mb-1">@Model.ClientName</h6>
                     <p class="text-muted small mb-0">Client</p>

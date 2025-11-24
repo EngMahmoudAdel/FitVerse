@@ -1,4 +1,4 @@
-﻿using FitVerse.Core.UnitOfWork;
+using FitVerse.Core.UnitOfWork;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -11,5 +11,6 @@ namespace FitVerse.Core.IService
     public interface IImageHandleService : IService
     {
         string? SaveImage(IFormFile? file);
+        bool DeleteImage(string? imagePath);
     }
 }

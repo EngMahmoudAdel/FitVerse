@@ -8,6 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
+using FitVerse.Core.Models;
 
 namespace FitVerse.Web.Controllers
 {
@@ -15,11 +17,15 @@ namespace FitVerse.Web.Controllers
     {
         private readonly IUnitOFWorkService unitOFWorkService;
         private readonly ILogger<DailyLogController> _logger;
+        private readonly FitVerse.Web.Helpers.NotificationHelper _notificationHelper;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public DailyLogController(IUnitOFWorkService unitOFWorkService, ILogger<DailyLogController> logger)
+        public DailyLogController(IUnitOFWorkService unitOFWorkService, ILogger<DailyLogController> logger, FitVerse.Web.Helpers.NotificationHelper notificationHelper, UserManager<ApplicationUser> userManager)
         {
             this.unitOFWorkService = unitOFWorkService;
             this._logger = logger;
+            this._notificationHelper = notificationHelper;
+            this._userManager = userManager;
         }
 
         [Authorize(Roles = "Client")]
@@ -54,7 +60,7 @@ namespace FitVerse.Web.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Client")]
-        public IActionResult AddClientLog(ClientAddDailyLogInputVM model)
+        public async Task<IActionResult> AddClientLog(ClientAddDailyLogInputVM model)
         {
             try
             {
@@ -96,6 +102,29 @@ namespace FitVerse.Web.Controllers
                 unitOFWorkService.DailyLogService.AddClientLog(log);
                 
                 _logger.LogInformation($"Daily log created successfully for client {currentClientId}");
+                
+                // Send notification to coach if assigned
+                if (!string.IsNullOrEmpty(coachId))
+                {
+                    try
+                    {
+                        var clientUser = await _userManager.FindByIdAsync(currentClientId);
+                        var clientName = clientUser?.FullName ?? clientUser?.UserName ?? "A client";
+                        
+                        await _notificationHelper.NotifyDailyLogSubmittedAsync(
+                            coachId,
+                            clientName,
+                            log.Id
+                        );
+                        
+                        _logger.LogInformation($"Notification sent to coach {coachId} for daily log {log.Id}");
+                    }
+                    catch (Exception notifEx)
+                    {
+                        _logger.LogError(notifEx, $"Error sending notification to coach {coachId}");
+                    }
+                }
+                
                 TempData["SuccessMessage"] = "Daily log saved successfully!";
 
                 return RedirectToAction("ClientLogs");
@@ -148,7 +177,7 @@ namespace FitVerse.Web.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Coach")]
-        public IActionResult ReviewLog(int id, string feedback, int rating)
+        public async Task<IActionResult> ReviewLog(int id, string feedback, int rating)
         {
             try
             {
@@ -171,6 +200,31 @@ namespace FitVerse.Web.Controllers
                 _logger.LogInformation($"Coach {currentCoachId} reviewing log {id} with rating {rating}");
                 
                 unitOFWorkService.DailyLogService.CoachReviewLog(id, feedback, rating);
+                
+                // Get the daily log to find the client
+                var dailyLog = unitOFWorkService.DailyLogService.GetById(id);
+                
+                // Send notification to client
+                if (dailyLog != null && !string.IsNullOrEmpty(dailyLog.ClientId))
+                {
+                    try
+                    {
+                        var coachUser = await _userManager.FindByIdAsync(currentCoachId);
+                        var coachName = coachUser?.FullName ?? coachUser?.UserName ?? "Your coach";
+                        
+                        await _notificationHelper.NotifyDailyLogReviewedAsync(
+                            dailyLog.ClientId,
+                            coachName,
+                            id
+                        );
+                        
+                        _logger.LogInformation($"Notification sent to client {dailyLog.ClientId} for daily log review {id}");
+                    }
+                    catch (Exception notifEx)
+                    {
+                        _logger.LogError(notifEx, $"Error sending notification to client {dailyLog.ClientId}");
+                    }
+                }
                 
                 TempData["SuccessMessage"] = "Log review submitted successfully!";
                 

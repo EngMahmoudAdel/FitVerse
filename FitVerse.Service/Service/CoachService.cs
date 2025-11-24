@@ -319,10 +319,45 @@ namespace FitVerse.Data.Service
                     .FirstOrDefault();
             }
 
+            public async Task<bool> UpdateCoachProfessionalInfo(string userName, int? experienceYears, decimal? salary, string about, string certificates, string specialties)
+            {
+                try
+                {
+                    // Get coach by username
+                    var coach = unitOfWork.Coaches
+                        .GetAll(filter: c => c.User.UserName == userName, includeProperties: "User")
+                        .FirstOrDefault();
 
+                    if (coach == null)
+                        return false;
 
+                    // Update coach properties
+                    if (experienceYears.HasValue)
+                        coach.ExperienceYears = experienceYears.Value;
 
+                    if (salary.HasValue)
+                        coach.Salary = salary.Value;
 
+                    if (!string.IsNullOrWhiteSpace(about))
+                        coach.About = about;
+
+                    if (!string.IsNullOrWhiteSpace(certificates))
+                        coach.Certificates = certificates;
+
+                    // Update specialties if needed
+                    // Note: You may need to update Specialties table separately if it's a many-to-many relationship
+                    // For now, we're just updating the coach record
+
+                    unitOfWork.Coaches.Update(coach);
+                    unitOfWork.Complete();
+
+                    return true;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
 
         }
     }

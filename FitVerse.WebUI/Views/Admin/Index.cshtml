@@ -80,9 +80,23 @@
                             <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
                                 <div class="d-flex align-items-center gap-3">
                                     @{
-                                        var imageUrl = !string.IsNullOrEmpty(coach.ImagePath) 
-                                            ? Url.Content(coach.ImagePath)
-                                            : $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(coach.Name)}&background=3b82f6&color=fff&size=100";
+                                        string imageUrl;
+                                        var imagePath = coach.ImagePath;
+                                        if (!string.IsNullOrEmpty(imagePath))
+                                        {
+                                            if (imagePath.StartsWith("/"))
+                                            {
+                                                imageUrl = Url.Content(imagePath);
+                                            }
+                                            else
+                                            {
+                                                imageUrl = Url.Content($"/profile-image/{imagePath}");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            imageUrl = $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(coach.Name)}&background=3b82f6&color=fff&size=100";
+                                        }
                                     }
                                     <img src="@imageUrl"
                                          alt="@coach.Name" 

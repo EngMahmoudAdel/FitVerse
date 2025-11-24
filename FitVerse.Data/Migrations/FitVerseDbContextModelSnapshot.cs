@@ -68,7 +68,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("PackageId");
 
-                    b.ToTable("ClientSubscription");
+                    b.ToTable("ClientSubscription", (string)null);
                 });
 
             modelBuilder.Entity("CoachPackage", b =>
@@ -83,7 +83,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("PackageId");
 
-                    b.ToTable("CoachPackage");
+                    b.ToTable("CoachPackage", (string)null);
                 });
 
             modelBuilder.Entity("FitVerse.Core.Models.ApplicationUser", b =>
@@ -189,7 +189,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Anatomies");
+                    b.ToTable("Anatomies", (string)null);
 
                     b.HasData(
                         new
@@ -246,7 +246,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("CoachId");
 
-                    b.ToTable("Chats");
+                    b.ToTable("Chats", (string)null);
                 });
 
             modelBuilder.Entity("FitVerse.Data.Models.Client", b =>
@@ -270,7 +270,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Clients");
+                    b.ToTable("Clients", (string)null);
                 });
 
             modelBuilder.Entity("FitVerse.Data.Models.Coach", b =>
@@ -298,7 +298,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Coaches");
+                    b.ToTable("Coaches", (string)null);
 
                     b.HasData(
                         new
@@ -385,7 +385,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("CoachId");
 
-                    b.ToTable("CoachFeedbacks");
+                    b.ToTable("CoachFeedbacks", (string)null);
                 });
 
             modelBuilder.Entity("FitVerse.Data.Models.CoachSpecialties", b =>
@@ -404,7 +404,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("SpecialtyId");
 
-                    b.ToTable("CoachSpecialties");
+                    b.ToTable("CoachSpecialties", (string)null);
 
                     b.HasData(
                         new
@@ -570,7 +570,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("CoachId");
 
-                    b.ToTable("DietPlans");
+                    b.ToTable("DietPlans", (string)null);
                 });
 
             modelBuilder.Entity("FitVerse.Data.Models.Equipment", b =>
@@ -591,7 +591,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Equipments");
+                    b.ToTable("Equipments", (string)null);
 
                     b.HasData(
                         new
@@ -656,7 +656,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("MuscleId");
 
-                    b.ToTable("Exercises");
+                    b.ToTable("Exercises", (string)null);
 
                     b.HasData(
                         new
@@ -760,7 +760,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("CoachId");
 
-                    b.ToTable("ExercisePlans");
+                    b.ToTable("ExercisePlans", (string)null);
                 });
 
             modelBuilder.Entity("FitVerse.Data.Models.ExercisePlanDetail", b =>
@@ -793,7 +793,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("ExercisePlanId");
 
-                    b.ToTable("ExercisePlanDetails");
+                    b.ToTable("ExercisePlanDetails", (string)null);
                 });
 
             modelBuilder.Entity("FitVerse.Data.Models.Message", b =>
@@ -836,7 +836,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("Messages");
+                    b.ToTable("Messages", (string)null);
                 });
 
             modelBuilder.Entity("FitVerse.Data.Models.Muscle", b =>
@@ -864,7 +864,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("AnatomyId");
 
-                    b.ToTable("Muscles");
+                    b.ToTable("Muscles", (string)null);
 
                     b.HasData(
                         new
@@ -953,7 +953,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("ReciverId");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("FitVerse.Data.Models.Package", b =>
@@ -983,7 +983,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Packages");
+                    b.ToTable("Packages", (string)null);
                 });
 
             modelBuilder.Entity("FitVerse.Data.Models.Payment", b =>
@@ -1021,7 +1021,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasIndex("PackageId");
 
-                    b.ToTable("Payments");
+                    b.ToTable("Payments", (string)null);
                 });
 
             modelBuilder.Entity("FitVerse.Data.Models.Specialty", b =>
@@ -1044,7 +1044,7 @@ namespace FitVerse.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Specialties");
+                    b.ToTable("Specialties", (string)null);
 
                     b.HasData(
                         new

@@ -643,9 +643,23 @@
                     <div class="dropdown">
                         @{
                             var coachName = ViewBag.UserFullName as string ?? User.Identity?.Name ?? "Coach";
-                            var coachImageUrl = ViewBag.UserImagePath != null && !string.IsNullOrEmpty(ViewBag.UserImagePath.ToString()) 
-                                ? Url.Content(ViewBag.UserImagePath.ToString())
-                                : $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(coachName)}&background=10b981&color=fff";
+                            var rawImagePath = ViewBag.UserImagePath?.ToString();
+                            string coachImageUrl;
+                            if (!string.IsNullOrEmpty(rawImagePath))
+                            {
+                                if (rawImagePath.StartsWith("/"))
+                                {
+                                    coachImageUrl = Url.Content(rawImagePath);
+                                }
+                                else
+                                {
+                                    coachImageUrl = Url.Content($"/profile-image/{rawImagePath}");
+                                }
+                            }
+                            else
+                            {
+                                coachImageUrl = $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(coachName)}&background=10b981&color=fff";
+                            }
                         }
                         <a class="user-profile dropdown-toggle" href="#" data-bs-toggle="dropdown">
                             <img src="@coachImageUrl" alt="@coachName" class="user-avatar" />
@@ -680,7 +694,10 @@
     <script src="~/jquery/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="~/js/script.js"></script>
-    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- SignalR -->
@@ -739,14 +756,36 @@
                 markAllNotificationsAsReadInUI();
             });
 
-            // النقر على "تحديد الكل كمقروء"
-            $('#markAllAsRead').click(function () {
-                notificationConnection.invoke("MarkAllNotificationsAsRead");
+            // النقر على "تحديد الكل كمقروء" - Using delegation
+            $(document).on('click', '#markAllAsRead', function () {
+                console.log('[Coach Layout] Mark all as read clicked');
+                if (notificationConnection && notificationConnection.state === signalR.HubConnectionState.Connected) {
+                    notificationConnection.invoke("MarkAllNotificationsAsRead");
+                } else {
+                    console.error('[Coach Layout] Notification connection not ready');
+                }
             });
 
-            // فتح قائمة الإشعارات
-            $('#notificationDropdown').on('click', function () {
-                notificationConnection.invoke("GetNotifications");
+            // فتح قائمة الإشعارات - Using delegation
+            $(document).on('click', '#notificationDropdown', function () {
+                console.log('[Coach Layout] Notification dropdown clicked');
+                if (notificationConnection && notificationConnection.state === signalR.HubConnectionState.Connected) {
+                    notificationConnection.invoke("GetNotifications");
+                } else {
+                    console.error('[Coach Layout] Notification connection not ready');
+                }
+            });
+
+            // ✅ DELEGATED EVENT BINDING for notification items (works with dynamic content)
+            $(document).on('click', '.notification-item', function () {
+                console.log('[Coach Layout] Notification item clicked via delegation');
+                const notificationId = $(this).data('id');
+                const isRead = $(this).hasClass('unread') === false;
+                
+                if (!isRead && notificationConnection && notificationConnection.state === signalR.HubConnectionState.Connected) {
+                    notificationConnection.invoke("MarkNotificationAsRead", notificationId.toString());
+                    console.log('[Coach Layout] Marking notification as read:', notificationId);
+                }
             });
         });
 
@@ -803,12 +842,7 @@
                 container.append(notificationHtml);
             }
 
-            // إضافة حدث النقر لتحديد الإشعار كمقروء
-            container.find(`[data-id="${notification.Id}"]`).click(function () {
-                if (!notification.IsRead) {
-                    notificationConnection.invoke("MarkNotificationAsRead", notification.Id.toString());
-                }
-            });
+            // ✅ No need for inline click handler - using delegated event binding instead
         }
 
         function markNotificationAsReadInUI(notificationId) {
@@ -836,17 +870,44 @@
     <!-- Enhanced Layout Functionality -->
     <script>
         $(document).ready(function () {
-            // Initialize Bootstrap dropdowns
-            if (typeof bootstrap !== 'undefined') {
-                // Initialize all dropdowns
-                var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
-                var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
-                    return new bootstrap.Dropdown(dropdownToggleEl, {
-                        boundary: 'viewport',
-                        display: 'dynamic'
-                    });
+            console.log('[Coach Layout] Document ready - initializing...');
+            
+            // ✅ FORCE initialize all dropdowns on page load
+            // This ensures dropdowns work on ALL pages
+            function initializeAllDropdowns() {
+                console.log('[Coach Layout] Force initializing all dropdowns...');
+                
+                document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(function(element) {
+                    // Check if already initialized
+                    var existingInstance = bootstrap.Dropdown.getInstance(element);
+                    
+                    if (!existingInstance) {
+                        try {
+                            new bootstrap.Dropdown(element, {
+                                boundary: 'viewport',
+                                autoClose: true
+                            });
+                            console.log('[Coach Layout] Initialized dropdown:', element.id || element.className);
+                        } catch (err) {
+                            console.error('[Coach Layout] Error initializing dropdown:', err);
+                        }
+                    } else {
+                        console.log('[Coach Layout] Dropdown already initialized:', element.id || element.className);
+                    }
                 });
             }
+            
+            // Initialize immediately
+            initializeAllDropdowns();
+            
+            // Reinitialize after delays to catch dynamically loaded content
+            setTimeout(initializeAllDropdowns, 500);
+            setTimeout(initializeAllDropdowns, 2000);
+            
+            // ✅ DELEGATED EVENT BINDING as additional fallback
+            $(document).on('show.bs.dropdown', function(e) {
+                console.log('[Coach Layout] Dropdown showing:', e.target.id || e.target.className);
+            });
 
             // Sidebar toggle functionality
             $('#sidebarToggle').on('click', function (e) {
@@ -910,39 +971,7 @@
                 }
             });
 
-            // Enhanced dropdown functionality
-            $('.dropdown-toggle').on('click', function (e) {
-                // Ensure dropdown works properly
-                const $dropdown = $(this).closest('.dropdown');
-                const $menu = $dropdown.find('.dropdown-menu');
-                
-                // Close other dropdowns
-                $('.dropdown-menu').not($menu).removeClass('show');
-                
-                // Toggle current dropdown
-                $menu.toggleClass('show');
-                
-                e.stopPropagation();
-            });
-
-            // Close dropdowns when clicking outside
-            $(document).on('click', function (e) {
-                if (!$(e.target).closest('.dropdown').length) {
-                    $('.dropdown-menu').removeClass('show');
-                }
-            });
-
-            // Prevent dropdown from closing when clicking inside
-            $('.dropdown-menu').on('click', function (e) {
-                e.stopPropagation();
-            });
-
-            // Close dropdown when clicking dropdown items (except for notification actions)
-            $('.dropdown-item').on('click', function (e) {
-                if (!$(this).hasClass('no-close')) {
-                    $(this).closest('.dropdown-menu').removeClass('show');
-                }
-            });
+            // ✅ Let Bootstrap handle dropdown functionality - no manual toggle needed!
 
             // Enhanced modal cleanup functionality
             function cleanupModal(modalId) {

@@ -213,7 +213,12 @@ $(document).ready(function () {
             },
             error: function (xhr) {
                 console.error("Error loading diet plans:", xhr);
-                swal("Error", "Failed to load diet plans.", "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Loading Failed',
+                    text: 'Unable to load diet plans. Please refresh the page.',
+                    confirmButtonColor: '#ef4444'
+                });
             }
         });
     }
@@ -221,29 +226,57 @@ $(document).ready(function () {
     // 🟣 حذف خطة
     $(document).on('click', '.delete-plan', function (e) {
         e.preventDefault();
+        e.stopPropagation();
         let id = $(this).data('id');
 
-        swal({
-            title: "Are you sure?",
-            text: "Once deleted, you will not be able to recover this diet plan!",
-            icon: "warning",
-            buttons: true,
-            dangerMode: true,
-        }).then((willDelete) => {
-            if (willDelete) {
+        Swal.fire({
+            title: 'Delete Diet Plan?',
+            text: "This action cannot be undone. The diet plan will be permanently removed.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: '<i class="bi bi-trash me-2"></i>Yes, Delete It',
+            cancelButtonText: '<i class="bi bi-x-circle me-2"></i>Cancel',
+            reverseButtons: true,
+            focusCancel: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Show loading
+                Swal.fire({
+                    title: 'Deleting...',
+                    text: 'Please wait while we remove the diet plan',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
                 $.ajax({
                     url: `/DietPlan/Delete/${id}`,
                     method: 'POST',
                     success: function (res) {
-                        swal("Deleted!", res.message, "success");
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted Successfully!',
+                            text: res.message || 'Diet plan has been removed.',
+                            confirmButtonColor: '#10b981',
+                            timer: 2000,
+                            showConfirmButton: true
+                        });
                         loadDietPlans();
+                        loadStatistics();
                     },
-                    error: function () {
-                        swal("Error", "Error deleting diet plan.", "error");
+                    error: function (xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Deletion Failed',
+                            text: 'Unable to delete the diet plan. Please try again.',
+                            confirmButtonColor: '#ef4444'
+                        });
                     }
                 });
-            } else {
-                swal("Your diet plan is safe!");
             }
         });
     });
@@ -262,7 +295,12 @@ $(document).ready(function () {
                 $('#viewDietPlanModal').modal('show');
             },
             error: function () {
-                swal("Error", "Failed to load diet plan details.", "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Loading Failed',
+                    text: 'Unable to load diet plan details.',
+                    confirmButtonColor: '#ef4444'
+                });
             }
         });
     });
@@ -282,12 +320,18 @@ $(document).ready(function () {
             ClientId: $('#clientId').val(), // 🟢 مهم جدًا
             ActivityMultiplier: parseFloat($('#activityMultiplier').val() || 1.2),
             Weight: parseFloat($('#weight').val()),
-            Height: parseFloat($('#height').val())
+            Height: parseFloat($('#height').val()),
+            Notes: $('#notes').val() || '' // ✅ إضافة حقل الـ Notes
 
         };
 
         if (!dietPlan.Name || !dietPlan.Goal || !dietPlan.TotalCal) {
-            swal("Warning", "Please fill in all required fields!", "warning");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Information',
+                text: 'Please fill in all required fields (Name, Goal, and Calories).',
+                confirmButtonColor: '#f59e0b'
+            });
             return;
         }
 
@@ -298,17 +342,34 @@ $(document).ready(function () {
             data: JSON.stringify(dietPlan),
             success: function (res) {
                 if (res.success) {
-                    swal("Success", res.message, "success");
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Diet Plan Created!',
+                        text: res.message || 'Your diet plan has been created successfully.',
+                        confirmButtonColor: '#10b981',
+                        timer: 2500
+                    });
                     $('#createDietPlanModal').modal('hide');
                     $('#dietPlanForm')[0].reset();
                     loadDietPlans();
+                    loadStatistics();
                 } else {
-                    swal("Error", "Failed to add diet plan!", "error");
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Creation Failed',
+                        text: res.message || 'Failed to add diet plan!',
+                        confirmButtonColor: '#ef4444'
+                    });
                 }
             },
             error: function (xhr) {
                 console.error(xhr);
-                swal("Error", "An error occurred while adding the diet plan.", "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error Occurred',
+                    text: 'An error occurred while adding the diet plan. Please try again.',
+                    confirmButtonColor: '#ef4444'
+                });
             }
         });
     });
@@ -335,13 +396,17 @@ $(document).ready(function () {
                 $('#editgender').val(plan.Gender);
                 $('#editweight').val(plan.Weight);
                 $('#editheight').val(plan.Height);
-
-
+                $('#editNotes').val(plan.Notes || ''); // ✅ تحميل الـ Notes
 
                 $('#editDietPlanModal').modal('show');
             },
             error: function () {
-                swal("Error", "Failed to load diet plan for editing.", "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Loading Failed',
+                    text: 'Unable to load diet plan for editing.',
+                    confirmButtonColor: '#ef4444'
+                });
             }
         });
     });
@@ -359,13 +424,18 @@ $(document).ready(function () {
             Age: parseInt($('#editage').val()),
             Gender: $('#editgender').val(),
             Weight: parseFloat($('#editweight').val()),
-            Height: parseFloat($('#editheight').val())
-
+            Height: parseFloat($('#editheight').val()),
+            Notes: $('#editNotes').val() || '' // ✅ إضافة حقل الـ Notes
 
         };
 
         if (!dietPlan.Name || !dietPlan.Goal || !dietPlan.TotalCal) {
-            swal("Warning", "Please fill in all required fields!", "warning");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Information',
+                text: 'Please fill in all required fields (Name, Goal, and Calories).',
+                confirmButtonColor: '#f59e0b'
+            });
             return;
         }
 
@@ -376,15 +446,32 @@ $(document).ready(function () {
             data: JSON.stringify(dietPlan),
             success: function (res) {
                 if (res.success) {
-                    swal("Success", res.message, "success");
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Diet Plan Updated!',
+                        text: res.message || 'Your diet plan has been updated successfully.',
+                        confirmButtonColor: '#10b981',
+                        timer: 2500
+                    });
                     $('#editDietPlanModal').modal('hide');
                     loadDietPlans();
+                    loadStatistics();
                 } else {
-                    swal("Error", "Failed to update diet plan!", "error");
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Update Failed',
+                        text: res.message || 'Failed to update diet plan!',
+                        confirmButtonColor: '#ef4444'
+                    });
                 }
             },
             error: function () {
-                swal("Error", "An error occurred while updating the diet plan.", "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error Occurred',
+                    text: 'An error occurred while updating the diet plan. Please try again.',
+                    confirmButtonColor: '#ef4444'
+                });
             }
         });
     });
@@ -502,11 +589,23 @@ $(document).ready(function () {
         
         const planId = $(this).data('id');
         
+        // Show loading while fetching plan details
+        Swal.fire({
+            title: 'Loading...',
+            text: 'Fetching diet plan details',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
         // Load plan details
         $.ajax({
             url: `/DietPlan/GetById/${planId}`,
             method: 'GET',
             success: function(plan) {
+                Swal.close();
                 $('#assignPlanId').val(plan.Id);
                 $('#assignPlanName').text(plan.Name);
                 $('#assignPlanDetails').text(`${plan.TotalCal} calories/day • ${plan.Goal}`);
@@ -517,7 +616,12 @@ $(document).ready(function () {
                 $('#assignDietPlanModal').modal('show');
             },
             error: function() {
-                swal("Error", "Failed to load plan details.", "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Loading Failed',
+                    text: 'Unable to load plan details. Please try again.',
+                    confirmButtonColor: '#ef4444'
+                });
             }
         });
     });
@@ -531,12 +635,21 @@ $(document).ready(function () {
                 const selector = $('#assignClientSelector');
                 selector.empty().append('<option value="">Select a client...</option>');
                 
-                clients.forEach(client => {
-                    selector.append(`<option value="${client.Id}">${client.Name}</option>`);
-                });
+                if (clients && clients.length > 0) {
+                    clients.forEach(client => {
+                        selector.append(`<option value="${client.Id}">${client.Name}</option>`);
+                    });
+                } else {
+                    selector.append('<option value="" disabled>No clients available</option>');
+                }
             },
             error: function() {
-                swal("Error", "Failed to load clients.", "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Loading Failed',
+                    text: 'Unable to load your clients. Please try again.',
+                    confirmButtonColor: '#ef4444'
+                });
             }
         });
     }
@@ -547,7 +660,12 @@ $(document).ready(function () {
         const clientId = $('#assignClientSelector').val();
         
         if (!clientId) {
-            swal("Warning", "Please select a client.", "warning");
+            Swal.fire({
+                icon: 'warning',
+                title: 'No Client Selected',
+                text: 'Please select a client to assign this diet plan.',
+                confirmButtonColor: '#f59e0b'
+            });
             return;
         }
         
@@ -561,15 +679,37 @@ $(document).ready(function () {
             data: JSON.stringify({ PlanId: parseInt(planId), ClientId: clientId }),
             success: function(response) {
                 if (response.success) {
-                    swal("Success!", response.message, "success");
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Assigned Successfully!',
+                        text: response.message || 'Diet plan has been assigned to the client.',
+                        confirmButtonColor: '#10b981',
+                        timer: 2500,
+                        showConfirmButton: true
+                    });
                     $('#assignDietPlanModal').modal('hide');
                     loadDietPlans();
+                    loadStatistics();
                 } else {
-                    swal("Error", response.message, "error");
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Assignment Failed',
+                        text: response.message || 'Unable to assign the diet plan.',
+                        confirmButtonColor: '#ef4444'
+                    });
                 }
             },
-            error: function() {
-                swal("Error", "Failed to assign diet plan.", "error");
+            error: function(xhr) {
+                let errorMessage = 'An error occurred while assigning the diet plan.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Assignment Failed',
+                    text: errorMessage,
+                    confirmButtonColor: '#ef4444'
+                });
             },
             complete: function() {
                 $btn.prop('disabled', false).html('<i class="bi bi-check-circle me-2"></i>Assign Plan');

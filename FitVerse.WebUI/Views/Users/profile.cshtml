@@ -1,8 +1,101 @@
 @using FitVerse.Core.ViewModels.Profile
-@{
-    Layout = "_AdminLayout";
-}
 @model ProfileViewModel
+@{
+    // Dynamically set layout based on user role
+    Layout = Model.UserInfo.Role switch
+    {
+        "Admin" => "_AdminLayout",
+        "Coach" => "_CoachLayout",
+        "Client" => "_ClientLayout",
+        _ => "_AdminLayout"
+    };
+}
+
+<style>
+    /* Profile Form Consistency Styles */
+    .form-control-custom,
+    .form-select-custom {
+        width: 100% !important;
+        height: 45px;
+        padding: 0.625rem 1rem;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+    }
+
+    .form-control-custom:focus,
+    .form-select-custom:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+    }
+
+    textarea.form-control-custom {
+        height: auto;
+        min-height: 100px;
+    }
+
+    .form-label-custom {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        color: #374151;
+    }
+
+    .text-danger {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 0.8125rem;
+    }
+
+    /* Ensure consistent spacing */
+    .mb-3 {
+        margin-bottom: 1rem !important;
+    }
+
+    .row.g-3 {
+        margin-right: -0.5rem;
+        margin-left: -0.5rem;
+    }
+
+    .row.g-3 > * {
+        padding-right: 0.5rem;
+        padding-left: 0.5rem;
+    }
+
+    /* Button consistency */
+    .btn-primary-custom.w-100 {
+        height: 45px;
+        font-weight: 500;
+    }
+
+    /* Profile card improvements */
+    .profile-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-custom {
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Form check alignment */
+    .form-check {
+        padding-left: 1.5rem;
+    }
+
+    .form-check-input {
+        margin-top: 0.25rem;
+    }
+
+    .form-check-label {
+        font-size: 0.9375rem;
+        color: #374151;
+    }
+</style>
 
 <input id="hiddenUserName" asp-for="@Model.UserInfo.UserName" type="hidden" />
 
@@ -18,8 +111,26 @@
         <div class="col-lg-4">
             <div class="profile-card">
                 <div class="profile-header text-center p-4">
-                    <img src="@(Model.UserInfo.ImagePath ?? $"https://ui-avatars.com/api/?name={Model.UserInfo.FullName.Split(' ').FirstOrDefault()}+{Model.UserInfo.FullName.Split(' ')[1]}&background=10b981&color=fff&size=120")"
-                         alt="Profile" class="profile-avatar">
+                    @{
+                        var imagePath = Model.UserInfo.ImagePath;
+                        string profileImageUrl;
+                        if (!string.IsNullOrEmpty(imagePath))
+                        {
+                            if (imagePath.StartsWith("/"))
+                            {
+                                profileImageUrl = Url.Content(imagePath);
+                            }
+                            else
+                            {
+                                profileImageUrl = Url.Content($"/profile-image/{imagePath}");
+                            }
+                        }
+                        else
+                        {
+                            profileImageUrl = $"https://ui-avatars.com/api/?name={Model.UserInfo.FullName.Split(' ').FirstOrDefault()}+{Model.UserInfo.FullName.Split(' ')[1]}&background=10b981&color=fff&size=120";
+                        }
+                    }
+                    <img src="@profileImageUrl" alt="Profile" class="profile-avatar">
                     <div id="profile-name" class="profile-name mt-2">@Model.UserInfo.FullName</div>
                     <div class="profile-role">@Model.UserInfo.Role</div>
                 </div>
@@ -45,41 +156,39 @@
 
             @if (User.IsInRole("Admin"))
             {
-                <div class="card-custom mt-5">
+                <div class="card-custom mt-4">
                     <div class="card-header-custom">
-                    <i class="bi bi-person-badge me-2"></i> Admin Functions
-                </div>
-                <div class="card-body-custom">
-                    <div class="col-12">
-                        <label asp-for=@Model.UserInfo.Role class="form-label-custom mb-4"></label>
-                        <select id="select-role" asp-for=@Model.UserInfo.Role class="form-control-custom">
-                            <option hidden selected>Select Role</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Coach">Coach</option>
-                            <option value="Client">Client</option>
-                        </select>
-                        <span asp-validation-for="@Model.UserInfo.Role" class="text-danger"></span>
+                        <i class="bi bi-person-badge me-2"></i> Admin Functions
                     </div>
-                    <form id="AdminFunctions">
+                    <div class="card-body-custom">
                         <div class="mb-3">
-                            <label asp-for="@Model.ChangePasswordByAdmin.Password" class="form-label-custom">New Password</label>
-                            <input asp-for="@Model.ChangePasswordByAdmin.Password" type="password" class="form-control-custom" placeholder="Enter new password" required>
-                            <span asp-validation-for="@Model.ChangePasswordByAdmin.Password" class="text-danger"></span>
+                            <label asp-for=@Model.UserInfo.Role class="form-label-custom">User Role</label>
+                            <select id="select-role" asp-for=@Model.UserInfo.Role class="form-control-custom">
+                                <option hidden selected>Select Role</option>
+                                <option value="Admin">Admin</option>
+                                <option value="Coach">Coach</option>
+                                <option value="Client">Client</option>
+                            </select>
+                            <span asp-validation-for="@Model.UserInfo.Role" class="text-danger"></span>
                         </div>
-                        <div class="mb-3">
-                            <label asp-for="@Model.ChangePasswordByAdmin.ConfirmPassword" class="form-label-custom">
-                                Confirm New Password
-                            </label>
-                            <input asp-for="@Model.ChangePasswordByAdmin.ConfirmPassword" type="password" class="form-control-custom" placeholder="Confirm new password" required>
-                            <span asp-validation-for="@Model.ChangePasswordByAdmin.ConfirmPassword" class="text-danger"></span>
-                        </div>
+                        <form id="AdminFunctions">
+                            <div class="mb-3">
+                                <label asp-for="@Model.ChangePasswordByAdmin.Password" class="form-label-custom">New Password</label>
+                                <input asp-for="@Model.ChangePasswordByAdmin.Password" type="password" class="form-control-custom" placeholder="Enter new password" required>
+                                <span asp-validation-for="@Model.ChangePasswordByAdmin.Password" class="text-danger"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="@Model.ChangePasswordByAdmin.ConfirmPassword" class="form-label-custom">Confirm New Password</label>
+                                <input asp-for="@Model.ChangePasswordByAdmin.ConfirmPassword" type="password" class="form-control-custom" placeholder="Confirm new password" required>
+                                <span asp-validation-for="@Model.ChangePasswordByAdmin.ConfirmPassword" class="text-danger"></span>
+                            </div>
 
-                        <button type="submit" class="btn btn-primary-custom">
-                            <i class="bi bi-check-circle me-2"></i> Change Password
-                        </button>
-                    </form>
+                            <button type="submit" class="btn btn-primary-custom w-100">
+                                <i class="bi bi-check-circle me-2"></i> Change Password
+                            </button>
+                        </form>
+                    </div>
                 </div>
-            </div>
             }
         </div>
 
@@ -114,24 +223,26 @@
 							<span asp-validation-for="@Model.UserInfo.PhoneNumber" class="text-danger"></span>
 
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label-custom">Age</label>
-                            <input asp-for=@Model.UserInfo.Age min="0" class="form-control-custom"/>
-							<span asp-validation-for="@Model.UserInfo.Age" class="text-danger"></span>
-                        </div>
-                        <div class="col-12">
-                            <label asp-for=@Model.UserInfo.Gender class="form-label-custom mb-4"></label>
-                            <select asp-for=@Model.UserInfo.Gender class="form-control-custom">
-                                <option hidden selected>Select Role</option>
-                                <option value="1">Male</option>
-                                <option value="2">Female</option>
-                            </select>
-                            <span asp-validation-for="@Model.UserInfo.Gender" class="text-danger"></span>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label-custom">Age</label>
+                                <input asp-for=@Model.UserInfo.Age type="number" min="0" class="form-control-custom"/>
+							    <span asp-validation-for="@Model.UserInfo.Age" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for=@Model.UserInfo.Gender class="form-label-custom">Gender</label>
+                                <select asp-for=@Model.UserInfo.Gender class="form-control-custom">
+                                    <option hidden selected>Select Gender</option>
+                                    <option value="1">Male</option>
+                                    <option value="2">Female</option>
+                                </select>
+                                <span asp-validation-for="@Model.UserInfo.Gender" class="text-danger"></span>
+                            </div>
                         </div>
 
                         <input asp-for="@Model.UserInfo.UserName" hidden>
 
-                        <button type="submit" class="btn btn-primary-custom">
+                        <button type="submit" class="btn btn-primary-custom w-100 mt-3">
                             <i class="bi bi-check-circle me-2"></i> Save Changes
                         </button>
                     </form>
@@ -146,32 +257,28 @@
                     <div class="card-body-custom">
                         <form id="professionalForm">
                             <div class="row g-3 mb-3">
-                                <div class="col-md-5">
+                                <div class="col-md-6">
                                     <label class="form-label-custom">Years of Experience</label>
-                                    <input asp-for=@Model.coachProfessionalInfo.ExperienceYears type="number" min="0" class="form-control-custom" >
+                                    <input asp-for=@Model.coachProfessionalInfo.ExperienceYears type="number" min="0" class="form-control-custom" placeholder="Enter years of experience">
 									<span asp-validation-for="@Model.coachProfessionalInfo.ExperienceYears" class="text-danger"></span>
                                 </div>
-                                <div class="col-md-5">
+                                <div class="col-md-6">
                                     <label class="form-label-custom">Salary (EGP)</label>
-                                    <input asp-for=@Model.coachProfessionalInfo.Salary type="number" min="0"  class="form-control-custom" >
+                                    <input asp-for=@Model.coachProfessionalInfo.Salary type="number" min="0"  class="form-control-custom" placeholder="Enter salary">
 									<span asp-validation-for="@Model.coachProfessionalInfo.Salary" class="text-danger"></span>
                                 </div>
-                            
                             </div>
                             
-                            <div class="mb-3 d-flex align-items-center">
-                                <label class="form-label-custom me-3">About</label>
+                            <div class="mb-3">
+                                <label class="form-label-custom">About</label>
                                 <textarea asp-for=@Model.coachProfessionalInfo.About class="form-control-custom" rows="3" placeholder="Tell us about yourself and your coaching approach..."></textarea>
                                 <span asp-validation-for="@Model.coachProfessionalInfo.About" class="text-danger"></span>
-
                             </div>
 
-
-                            <div class="mb-3 d-flex align-items-center">
-                                <label class="form-label-custom me-3">Certificates</label>
-                                <input asp-for=@Model.coachProfessionalInfo.Certificates class="form-control-custom col-md-8 p-4"  placeholder="List your certifications and qualifications"/>
+                            <div class="mb-3">
+                                <label class="form-label-custom">Certificates</label>
+                                <input asp-for=@Model.coachProfessionalInfo.Certificates class="form-control-custom" placeholder="List your certifications and qualifications"/>
                                 <span asp-validation-for="@Model.coachProfessionalInfo.Certificates" class="text-danger"></span>
-
                             </div>
                             <div class="mb-3">
                                 <label class="form-label-custom d-block mb-2">Specialties</label>
@@ -215,9 +322,9 @@
                                 </div>
                             </div>
 
-                            
+                            <input type="hidden" id="hiddenUserName" value="@Model.UserInfo.UserName" />
 
-                            <button type="submit" class="btn btn-primary-custom">
+                            <button type="submit" class="btn btn-primary-custom w-100 mt-3">
                                 <i class="bi bi-check-circle me-2"></i> Update Professional Info
                             </button>
                         </form>
@@ -252,7 +359,7 @@
                                     <span asp-validation-for="@Model.clientPhysicalInfo.Goal" class="text-danger"></span>
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-primary-custom">
+                            <button type="submit" class="btn btn-primary-custom w-100 mt-3">
                                 <i class="bi bi-check-circle me-2"></i> Save Goals
                             </button>
                         </form>
@@ -283,7 +390,7 @@
                             <input asp-for=@Model.ChangePasswordByUser.ConfirmPassword type="password" class="form-control-custom" placeholder="Confirm new password" minlength="6" required>
                             <span asp-validation-for="@Model.ChangePasswordByUser.ConfirmPassword" class="text-danger"></span>
                         </div>
-                        <button type="submit" class="btn btn-primary-custom">
+                        <button type="submit" class="btn btn-primary-custom w-100 mt-3">
                             <i class="bi bi-check-circle me-2"></i> Change Password
                         </button>
                     </form>
@@ -310,18 +417,6 @@
     document.getElementById('btnChangeAvatar').addEventListener('click', () => {
         document.getElementById('avatarFile').click();
     });
-
-    document.getElementById('personalForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        showAlert('success', 'Personal information saved.');
-    });
-
-
-
-
-   
-
-  
 </script>
     <script src="~/ViewJs/Profile.js"></script>
 

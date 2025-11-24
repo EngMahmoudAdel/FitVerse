@@ -50,7 +50,23 @@
                         <div class="card-body-custom">
                             <h5 class="fw-bold mb-4">Your Coach</h5>
                             <div class="d-flex align-items-center">
-                                <img src="@Model.CoachImagePath" alt="@Model.CoachName"
+                                @{
+                                    string coachImageUrl;
+                                    var coachImagePath = Model.CoachImagePath as string;
+                                    if (string.IsNullOrEmpty(coachImagePath))
+                                    {
+                                        coachImageUrl = $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(Model.CoachName ?? "Coach")}&background=6366f1&color=fff";
+                                    }
+                                    else if (coachImagePath.StartsWith("/"))
+                                    {
+                                        coachImageUrl = Url.Content(coachImagePath);
+                                    }
+                                    else
+                                    {
+                                        coachImageUrl = Url.Content($"/profile-image/{coachImagePath}");
+                                    }
+                                }
+                                <img src="@coachImageUrl" alt="@Model.CoachName"
                                      style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-right: 20px;">
                                 <div>
                                     <h6 class="fw-bold mb-1">@Model.CoachName</h6>

@@ -70,7 +70,23 @@
                                     <div class="coach-content">
                                         <div class="coach-avatar-wrapper">
                                             <div class="coach-avatar">
-                                                <img src="@(string.IsNullOrEmpty(coach.User.ImagePath) ? $"https://ui-avatars.com/api/?name={coach.User.FullName}&background=10b981&color=fff" : coach.User.ImagePath)" 
+                                                @{
+                                                    var coachImagePath = coach.User.ImagePath;
+                                                    string coachAvatarUrl;
+                                                    if (string.IsNullOrEmpty(coachImagePath))
+                                                    {
+                                                        coachAvatarUrl = $"https://ui-avatars.com/api/?name={coach.User.FullName}&background=10b981&color=fff";
+                                                    }
+                                                    else if (coachImagePath.StartsWith("/"))
+                                                    {
+                                                        coachAvatarUrl = Url.Content(coachImagePath);
+                                                    }
+                                                    else
+                                                    {
+                                                        coachAvatarUrl = Url.Content($"/profile-image/{coachImagePath}");
+                                                    }
+                                                }
+                                                <img src="@coachAvatarUrl" 
                                                      alt="@coach.User.FullName" class="avatar-img">
                                                 <span class="status-indicator @(coach.User.Status == "Active" ? "online" : "offline")"></span>
                                             </div>
@@ -214,6 +230,12 @@
             connection.on("UserOffline", function (userId) {
                 updateUserStatus(userId, false);
             });
+
+            // ✅ Handle chat marked as read event
+            connection.on("ChatMarkedAsRead", chatId => {
+                console.log('[ClientChat] Received ChatMarkedAsRead event for chat:', chatId);
+                updateChatUnreadBadge(chatId, 0);
+            });
         }
 
         // Load user chats
@@ -317,7 +339,7 @@
             `;
 
             // Enhanced click handler with keyboard support
-            const clickHandler = () => selectChat(chat.Id, chat.OtherUserId, chat.OtherUserName);
+            const clickHandler = () => selectChat(chat.Id, chat.OtherUserId, chat.OtherUserName, chat.OtherUserAvatar);
             div.addEventListener('click', clickHandler);
             div.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -343,12 +365,12 @@
         }
 
         // Select a chat
-        function selectChat(chatId, receiverId, receiverName) {
+        function selectChat(chatId, receiverId, receiverName, receiverAvatar) {
             currentChatId = chatId;
             currentReceiverId = receiverId;
 
             // Update chat header
-            updateChatHeader(receiverName, receiverId);
+            updateChatHeader(receiverName, receiverId, receiverAvatar);
 
             // Highlight active chat
             document.querySelectorAll('.chat-item').forEach(item => item.style.background = '');
@@ -456,13 +478,17 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        function updateChatHeader(receiverName, receiverId) {
+        function updateChatHeader(receiverName, receiverId, receiverAvatar) {
             const header = document.getElementById('chatHeader');
+            const avatarUrl = receiverAvatar && receiverAvatar.trim() !== ''
+                ? receiverAvatar
+                : `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverName)}&background=10b981&color=fff`;
+
             header.innerHTML = `
                 <div class="chat-header-content">
                     <div class="chat-header-user">
                         <div class="chat-header-avatar">
-                            <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(receiverName)}&background=10b981&color=fff" 
+                            <img src="${avatarUrl}" 
                                  alt="${receiverName}" class="avatar-img">
                             <span class="status-indicator online"></span>
                         </div>
@@ -471,25 +497,6 @@
                             <p class="chat-header-status">Coach • <span class="status-text">Online</span></p>
                         </div>
                     </div>
-                    <div class="chat-header-actions">
-                        <button class="btn btn-light modern-btn-icon" title="Voice call">
-                            <i class="bi bi-telephone"></i>
-                        </button>
-                        <button class="btn btn-light modern-btn-icon" title="Video call">
-                            <i class="bi bi-camera-video"></i>
-                        </button>
-                        <div class="dropdown">
-                            <button class="btn btn-light modern-btn-icon dropdown-toggle" 
-                                    data-bs-toggle="dropdown" title="More options">
-                                <i class="bi bi-three-dots-vertical"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>View Profile</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="bi bi-bell-slash me-2"></i>Mute</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i>Delete Chat</a></li>
-                            </ul>
-                        </div>
                     </div>
                 </div>
             `;
@@ -497,14 +504,79 @@
         }
 
         function markChatAsRead(chatId) {
-            fetch('/Chat/MarkAsRead', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
-                },
-                body: JSON.stringify({ chatId })
-            });
+            console.log('[ClientChat] Marking chat as read:', chatId);
+            
+            // Use SignalR to mark chat as read for real-time updates
+            if (connection && connection.state === signalR.HubConnectionState.Connected) {
+                connection.invoke("MarkChatAsRead", chatId.toString(), currentUserId)
+                    .then(() => {
+                        console.log('[ClientChat] Chat marked as read via SignalR');
+                        // Update UI immediately
+                        updateChatUnreadBadge(chatId, 0);
+                    })
+                    .catch(err => {
+                        console.error('[ClientChat] Error marking chat as read:', err);
+                        // Fallback to HTTP request
+                        fetch('/Chat/MarkAsRead', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                            },
+                            body: JSON.stringify({ chatId })
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log('[ClientChat] Chat marked as read via HTTP');
+                                updateChatUnreadBadge(chatId, 0);
+                            }
+                        });
+                    });
+            } else {
+                // Fallback if SignalR not connected
+                fetch('/Chat/MarkAsRead', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    },
+                    body: JSON.stringify({ chatId })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('[ClientChat] Chat marked as read via HTTP (SignalR not connected)');
+                        updateChatUnreadBadge(chatId, 0);
+                    }
+                });
+            }
+        }
+
+        // Update unread badge for a specific chat
+        function updateChatUnreadBadge(chatId, count) {
+            const chatItem = document.querySelector(`[data-chat-id="${chatId}"]`);
+            if (chatItem) {
+                const badge = chatItem.querySelector('.unread-badge');
+                if (count > 0) {
+                    if (badge) {
+                        badge.textContent = count;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        // Create badge if it doesn't exist
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'unread-badge';
+                        newBadge.textContent = count;
+                        chatItem.querySelector('.chat-info')?.appendChild(newBadge);
+                    }
+                } else {
+                    // Remove badge if count is 0
+                    if (badge) {
+                        badge.remove();
+                    }
+                }
+                console.log(`[ClientChat] Updated unread badge for chat ${chatId}: ${count}`);
+            }
         }
 
         function markMessageAsRead(messageId) {
@@ -678,7 +750,7 @@
             .then(data => {
                 if (data.success) {
                     loadUserChats();
-                    selectChat(data.chatId, otherUserId, data.otherUserName);
+                    selectChat(data.chatId, otherUserId, data.otherUserName, null);
                 } else {
                     console.error('Error creating chat:', data.message);
                 }

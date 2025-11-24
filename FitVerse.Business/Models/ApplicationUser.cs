@@ -1,4 +1,4 @@
-﻿using FitVerse.Core.Enums;
+using FitVerse.Core.Enums;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;

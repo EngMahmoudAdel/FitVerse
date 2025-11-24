@@ -288,10 +288,22 @@
                     </a>
                 </div>
 
-                <img src="@(string.IsNullOrEmpty(Model.CoachImagePath) || Model.CoachImagePath == "--"
-                                      ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(Model.CoachName ?? "Coach")}&background=4f46e5&color=fff"
-                                      : Url.Content(Model.CoachImagePath))"
-                     class="coach-avatar" alt="@Model.CoachName" />
+                @{
+                    string coachImageUrl;
+                    if (string.IsNullOrEmpty(Model.CoachImagePath) || Model.CoachImagePath == "--")
+                    {
+                        coachImageUrl = $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(Model.CoachName ?? "Coach")}&background=4f46e5&color=fff";
+                    }
+                    else if (Model.CoachImagePath.StartsWith("/"))
+                    {
+                        coachImageUrl = Url.Content(Model.CoachImagePath);
+                    }
+                    else
+                    {
+                        coachImageUrl = Url.Content($"/profile-image/{Model.CoachImagePath}");
+                    }
+                }
+                <img src="@coachImageUrl" class="coach-avatar" alt="@Model.CoachName" />
             </div>
         </div>
 
@@ -387,10 +399,23 @@
                         {
                             <div class="col-md-4 mb-3">
                                 <div class="coach-preview-card">
-                                    <img src="@(string.IsNullOrEmpty(coach.User?.ImagePath)
-                                                      ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(coach.User?.FullName ?? "Coach")}&background=4f46e5&color=fff"
-                                                      : Url.Content(coach.User.ImagePath))"
-                                         class="coach-avatar" alt="@coach.User?.FullName" />
+                                    @{
+                                        string coachPreviewUrl;
+                                        var coachImagePath = coach.User?.ImagePath;
+                                        if (string.IsNullOrEmpty(coachImagePath))
+                                        {
+                                            coachPreviewUrl = $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(coach.User?.FullName ?? "Coach")}&background=4f46e5&color=fff";
+                                        }
+                                        else if (coachImagePath.StartsWith("/"))
+                                        {
+                                            coachPreviewUrl = Url.Content(coachImagePath);
+                                        }
+                                        else
+                                        {
+                                            coachPreviewUrl = Url.Content($"/profile-image/{coachImagePath}");
+                                        }
+                                    }
+                                    <img src="@coachPreviewUrl" class="coach-avatar" alt="@coach.User?.FullName" />
                                     <h6 class="mb-2">@coach.User?.FullName</h6>
                                     <p class="text-muted small mb-3">@coach.ExperienceYears سنوات خبرة</p>
                                     <a href="@Url.Action("ClientCoaches", "Coach")" class="btn btn-outline-primary btn-sm">
@@ -457,10 +482,22 @@
                 <!-- Client Image & Name -->
                 <div class="col-md-4 mb-3 mb-md-0 text-center">
                     <div class="info-card h-100 d-flex flex-column align-items-center">
-                        <img src="@(string.IsNullOrEmpty(Model.ClientImagePath) || Model.ClientImagePath == "--"
-                                                              ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(Model.ClientName ?? "Client")}&background=10b981&color=fff"
-                                                              : Url.Content(Model.ClientImagePath))"
-                             class="coach-avatar mb-2" style="width:100px; height:100px;" alt="@Model.ClientName" />
+                        @{
+                            string clientImageUrl;
+                            if (string.IsNullOrEmpty(Model.ClientImagePath) || Model.ClientImagePath == "--")
+                            {
+                                clientImageUrl = $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(Model.ClientName ?? "Client")}&background=10b981&color=fff";
+                            }
+                            else if (Model.ClientImagePath.StartsWith("/"))
+                            {
+                                clientImageUrl = Url.Content(Model.ClientImagePath);
+                            }
+                            else
+                            {
+                                clientImageUrl = Url.Content($"/profile-image/{Model.ClientImagePath}");
+                            }
+                        }
+                        <img src="@clientImageUrl" class="coach-avatar mb-2" style="width:100px; height:100px;" alt="@Model.ClientName" />
                         <h6 class="text-muted small mb-1">العميل</h6>
                         <h5 class="mb-0">@Model.ClientName</h5>
                     </div>

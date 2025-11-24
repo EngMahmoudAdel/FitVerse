@@ -171,7 +171,7 @@ function createGridCard(c) {
                 <div class="client-card-header">
                     <div class="d-flex align-items-center gap-3">
                         <div class="client-avatar">
-                            <img src="${c.ImagePath || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(c.Name) + '&background=6366f1&color=fff'}" alt="${c.Name}" class="avatar-img">
+                            <img src="${c.Image || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(c.Name) + '&background=6366f1&color=fff'}" alt="${c.Name}" class="avatar-img">
                         </div>
                         <div class="flex-grow-1">
                             <h5 class="client-name mb-1">${c.Name}</h5>
@@ -213,29 +213,12 @@ function createGridCard(c) {
                 
                 <div class="client-card-footer">
                     <div class="d-flex gap-2">
-                        <button class="btn btn-primary modern-btn flex-grow-1" onclick="viewClientProfile('${c.Id}')">
-                            <i class="bi bi-eye me-2"></i>View Profile
+                        <button class="btn btn-primary modern-btn flex-grow-1" onclick="openClientChat('${c.Id}')">
+                            <i class="bi bi-chat-dots me-2"></i>Chat
                         </button>
-                        <button class="btn btn-outline-primary modern-btn" onclick="openClientChat('${c.Id}')" title="Chat">
-                            <i class="bi bi-chat-dots"></i>
+                        <button class="btn btn-outline-primary modern-btn flex-grow-1" onclick="assignPlan('${c.Id}')">
+                            <i class="bi bi-clipboard-plus me-2"></i>Assign Plan
                         </button>
-                        <div class="dropdown">
-                            <button class="btn btn-outline-secondary modern-btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-three-dots"></i>
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" onclick="editClient('${c.Id}')">
-                                    <i class="bi bi-pencil me-2"></i>Edit Client
-                                </a></li>
-                                <li><a class="dropdown-item" href="#" onclick="assignPlan('${c.Id}')">
-                                    <i class="bi bi-clipboard-plus me-2"></i>Assign Plan
-                                </a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="#" onclick="deactivateClient('${c.Id}')">
-                                    <i class="bi bi-person-x me-2"></i>Deactivate
-                                </a></li>
-                            </ul>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -250,7 +233,7 @@ function createListCard(c) {
                     <div class="col-lg-4">
                         <div class="d-flex align-items-center gap-3">
                             <div class="client-avatar">
-                                <img src="${c.ImagePath || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(c.Name) + '&background=6366f1&color=fff'}" alt="${c.Name}" class="avatar-img">
+                                <img src="${c.Image || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(c.Name) + '&background=6366f1&color=fff'}" alt="${c.Name}" class="avatar-img">
                             </div>
                             <div>
                                 <h6 class="client-name mb-1">${c.Name}</h6>
@@ -278,29 +261,12 @@ function createListCard(c) {
                     </div>
                     <div class="col-lg-2">
                         <div class="d-flex gap-1 justify-content-end">
-                            <button class="btn btn-sm btn-primary modern-btn" onclick="viewClientProfile('${c.Id}')" title="View Profile">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-primary modern-btn" onclick="openClientChat('${c.Id}')" title="Chat">
+                            <button class="btn btn-sm btn-primary modern-btn" onclick="openClientChat('${c.Id}')" title="Chat">
                                 <i class="bi bi-chat-dots"></i>
                             </button>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-secondary modern-btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-three-dots"></i>
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" onclick="editClient('${c.Id}')">
-                                        <i class="bi bi-pencil me-2"></i>Edit
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="assignPlan('${c.Id}')">
-                                        <i class="bi bi-clipboard-plus me-2"></i>Assign Plan
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-danger" href="#" onclick="deactivateClient('${c.Id}')">
-                                        <i class="bi bi-person-x me-2"></i>Deactivate
-                                    </a></li>
-                                </ul>
-                            </div>
+                            <button class="btn btn-sm btn-outline-primary modern-btn" onclick="assignPlan('${c.Id}')" title="Assign Plan">
+                                <i class="bi bi-clipboard-plus"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -314,30 +280,113 @@ function showEmptyState() {
     $('#emptyState').show();
 }
 
-// Action functions (preserve existing functionality)
-function viewClientProfile(clientId) {
-    console.log('View client profile:', clientId);
-    // Original functionality - can be implemented based on existing routes
-    window.location.href = `/Coach/ClientProfile/${clientId}`;
-}
-
+// Action functions
 function openClientChat(clientId) {
-    console.log('Open chat with client:', clientId);
-    // Original functionality - can be implemented based on existing chat system
-    window.location.href = `/Chat/Client/${clientId}`;
-}
-
-function editClient(clientId) {
-    console.log('Edit client:', clientId);
-    // Placeholder for edit functionality
+    if (!clientId) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Client ID is missing',
+            confirmButtonColor: '#ef4444'
+        });
+        return;
+    }
+    
+    // Show loading
+    Swal.fire({
+        title: 'Opening Chat...',
+        text: 'Please wait',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Get the client's UserId first, then create/open chat
+    $.ajax({
+        url: `/Client/GetClientUserId/${clientId}`,
+        method: 'GET',
+        success: function(response) {
+            if (response.success && response.userId) {
+                // Create or get existing chat with this client
+                $.ajax({
+                    url: '/Chat/CreateChat',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ OtherUserId: response.userId }),
+                    success: function(chatResponse) {
+                        Swal.close();
+                        if (chatResponse.success) {
+                            // Navigate to coach chat page
+                            window.location.href = '/Chat/CoachChat';
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: chatResponse.message || 'Unable to open chat',
+                                confirmButtonColor: '#ef4444'
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Unable to create chat. Please try again.',
+                            confirmButtonColor: '#ef4444'
+                        });
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Unable to get client information',
+                    confirmButtonColor: '#ef4444'
+                });
+            }
+        },
+        error: function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Unable to get client information',
+                confirmButtonColor: '#ef4444'
+            });
+        }
+    });
 }
 
 function assignPlan(clientId) {
-    console.log('Assign plan to client:', clientId);
-    // Placeholder for assign plan functionality
-}
-
-function deactivateClient(clientId) {
-    console.log('Deactivate client:', clientId);
-    // Placeholder for deactivate functionality
+    if (!clientId) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Client ID is missing',
+            confirmButtonColor: '#ef4444'
+        });
+        return;
+    }
+    
+    Swal.fire({
+        title: 'Assign Plan',
+        html: `
+            <div class="text-start">
+                <p class="mb-3">Choose which plan to assign:</p>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary" onclick="window.location.href='/ExercisePlan/Index?clientId=${clientId}'">
+                        <i class="bi bi-lightning me-2"></i>Assign Exercise Plan
+                    </button>
+                    <button class="btn btn-success" onclick="window.location.href='/DietPlan/Index?clientId=${clientId}'">
+                        <i class="bi bi-egg me-2"></i>Assign Diet Plan
+                    </button>
+                </div>
+            </div>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Close',
+        width: '400px'
+    });
 }

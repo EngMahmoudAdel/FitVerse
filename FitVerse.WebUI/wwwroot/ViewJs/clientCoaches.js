@@ -35,9 +35,16 @@ function loadCoachesWithSpecialties() {
             $('#coachesContainer').empty();
 
             response.data.forEach(coach => {
-                const imageUrl = coach.ImagePath && coach.ImagePath.trim() !== ''
-                    ? coach.ImagePath
-                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(coach.Name)}&background=6366f1&color=fff`;
+                let imageUrl;
+                if (coach.ImagePath && coach.ImagePath.trim() !== '') {
+                    if (coach.ImagePath.startsWith('/')) {
+                        imageUrl = coach.ImagePath;
+                    } else {
+                        imageUrl = `/profile-image/${coach.ImagePath}`;
+                    }
+                } else {
+                    imageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(coach.Name)}&background=6366f1&color=fff`;
+                }
 
                 let specialtiesText = coach.Specialties && coach.Specialties.length > 0
                     ? coach.Specialties.join(', ')

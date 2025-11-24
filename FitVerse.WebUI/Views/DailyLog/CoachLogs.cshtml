@@ -166,7 +166,17 @@
                                 <div class="client-avatar">
                                     @if (!string.IsNullOrEmpty(log.Client?.User.ImagePath))
                                     {
-                                        <img src="@log.Client.User.ImagePath" alt="@log.Client.User.FullName" class="avatar-img">
+                                        var clientImagePath = log.Client.User.ImagePath;
+                                        string clientImageUrl;
+                                        if (clientImagePath.StartsWith("/"))
+                                        {
+                                            clientImageUrl = Url.Content(clientImagePath);
+                                        }
+                                        else
+                                        {
+                                            clientImageUrl = Url.Content($"/profile-image/{clientImagePath}");
+                                        }
+                                        <img src="@clientImageUrl" alt="@log.Client.User.FullName" class="avatar-img">
                                     }
                                     else
                                     {

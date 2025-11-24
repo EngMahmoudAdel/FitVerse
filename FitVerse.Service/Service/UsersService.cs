@@ -314,74 +314,27 @@ namespace FitVerse.Service.Service
             viewModel.Role = role;
             viewModel.PhoneNumber = user.PhoneNumber;
             viewModel.Email = user.Email;
-            viewModel.Age=user.Age;
-            viewModel.Gender= user.Gender;
+            viewModel.Age = user.Age;
+            viewModel.Gender = user.Gender;
 
             return viewModel;
         }
 
-
-        public async Task<string> SaveImageInWWWRoot(IFormFile image)
+        public async Task UpdateUserImagePathAsync(string userName, string imageFileName)
         {
-            if (image != null && image.Length > 0)
+            if (string.IsNullOrWhiteSpace(userName))
             {
-                string fileName = Path.GetFileName(image.FileName).Insert(0, DateTime.Now.ToString("yyyymmddHHMMSSFF"));
-
-                string uploadPathOnly = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "img");
-
-                if (!Directory.Exists(uploadPathOnly))
-                {
-                    Directory.CreateDirectory(uploadPathOnly);
-                }
-
-                string filePath = Path.Combine(uploadPathOnly, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await image.CopyToAsync(stream);
-                }
-
-                return $"/img/{fileName}";
+                throw new ArgumentException("User name is required", nameof(userName));
             }
-            return null;
 
-        }
-        public async Task<string> SaveOrUpdateImageInWWWRoot(IFormFile image, string UserName)
-        {
-            if (image != null && image.Length > 0)
+            var user = await userManager.FindByNameAsync(userName);
+            if (user == null)
             {
-                string fileName = Path.GetFileName(image.FileName).Insert(0, DateTime.Now.ToString("yyyymmddHHMMSSFF"));
-
-                string uploadPathOnly = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "img");
-
-                if (!Directory.Exists(uploadPathOnly))
-                {
-                    Directory.CreateDirectory(uploadPathOnly);
-                }
-
-                string filePath = Path.Combine(uploadPathOnly, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await image.CopyToAsync(stream);
-                }
-                var user = await userManager.FindByNameAsync(UserName);
-
-                var lastImage = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.ImagePath?.TrimStart('/').Replace('/', Path.DirectorySeparatorChar) ?? "");
-
-
-                if (System.IO.File.Exists(lastImage))
-                {
-
-                    System.IO.File.Delete(lastImage);
-                }
-                user.ImagePath = $"/img/{fileName}";
-                await userManager.UpdateAsync(user);
-                await userManager.UpdateAsync(user);
-                return $"/img/{fileName}";
+                throw new InvalidOperationException($"User not found: {userName}");
             }
-            return null;
 
+            user.ImagePath = imageFileName;
+            await userManager.UpdateAsync(user);
         }
 
         public async Task<(bool, string)> UpdatePersonalInfoAsync(GetAllUsersViewModel user)
